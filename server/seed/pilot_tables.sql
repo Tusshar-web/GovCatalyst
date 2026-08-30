@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS gov_pilot_evidences (
 CREATE TABLE IF NOT EXISTS gov_pilot_audit_logs (
   id         SERIAL       PRIMARY KEY,
   pilot_id   UUID,
-  user_id    INTEGER,
+  user_id    UUID,
   action     VARCHAR(255) NOT NULL,
   detail     TEXT,
   old_value  TEXT         NOT NULL DEFAULT 'N/A',

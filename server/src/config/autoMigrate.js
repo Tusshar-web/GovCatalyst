@@ -50,6 +50,16 @@ async function runAutoMigration() {
     // ignore if table doesn't exist yet
   }
 
+  // Ensure user_id in gov_pilot_audit_logs is UUID
+  try {
+    await pool.query(`
+      ALTER TABLE gov_pilot_audit_logs 
+      ALTER COLUMN user_id TYPE UUID USING NULL;
+    `);
+  } catch (aErr) {
+    // ignore if table doesn't exist yet
+  }
+
   // Ensure default super_admin exists
   try {
     const adminEmail = process.env.SUPERADMIN_EMAIL || 'learnova.service@gmail.com';
