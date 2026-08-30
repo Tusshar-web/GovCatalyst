@@ -70,28 +70,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('Live challenges fetch notice:', e.message);
             }
 
-            // Attempt to fetch live startups / applications
+            // Attempt to fetch live startups
             try {
-                const appRes = await GovApi.getApplications();
-                if (appRes && appRes.success && Array.isArray(appRes.applications) && appRes.applications.length > 0) {
+                const appRes = await GovApi.getStartups();
+                if (appRes && appRes.success && Array.isArray(appRes.startups) && appRes.startups.length > 0) {
                     const uniqueStartups = [];
-                    appRes.applications.forEach(a => {
-                        const sName = a.startup_name || a.company_name || a.applicant_name;
+                    appRes.startups.forEach(a => {
+                        const sName = a.company_name || a.startup_name || a.name || a.applicant_name;
                         if (sName && !uniqueStartups.some(u => u.name === sName)) {
                             uniqueStartups.push({
-                                id: a.startup_id || a.id,
+                                id: a.id,
                                 name: sName,
                                 sector: a.sector || 'AgriTech / GovTech'
                             });
                         }
                     });
                     if (uniqueStartups.length > 0) {
-                        startups = [...uniqueStartups, ...GovData.startups.filter(s => !uniqueStartups.some(u => u.name === s.name))];
+                        startups = uniqueStartups;
                         GovData.startups = startups;
                     }
                 }
             } catch (e) {
-                console.log('Live applications fetch notice:', e.message);
+                console.log('Live startups fetch notice:', e.message);
             }
         }
 

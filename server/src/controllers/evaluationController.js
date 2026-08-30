@@ -248,19 +248,89 @@ exports.declareConflict = async (req, res) => {
  */
 exports.submitScores = async (req, res) => {
   try {
-    const { assignmentId, scores } = req.body;
-    if (!assignmentId || !Array.isArray(scores) || scores.length === 0) {
-      return res.status(400).json({ success: false, message: 'assignmentId and a non-empty scores array are required.' });
+    let { assignmentId, scores, challengeId, startupId, evaluatorId } = req.body;
+    if (!scores || !Array.isArray(scores) || scores.length === 0) {
+      return res.status(400).json({ success: false, message: 'a non-empty scores array is required.' });
     }
 
-    // Handle mock UI submissions gracefully
-    if (assignmentId.startsWith('assign_')) {
-      return res.json({
-        success: true,
-        message: 'Mock evaluation recorded successfully (UI mode).',
-        criteriaScored: scores.length,
-        weightedScore: 85
-      });
+    // Auto-resolve assignment if a mock UI one was passed
+    if (assignmentId && assignmentId.startsWith('assign_')) {
+      if (!challengeId || !startupId || !evaluatorId) {
+        return res.status(400).json({ success: false, message: 'challengeId, startupId, and evaluatorId are required when using mock assignment ID.' });
+      }
+      
+      // 1. Ensure application exists
+      const { rows: apps } = await pool.query(
+        'SELECT id FROM applications WHERE challenge_id = $1 AND startup_id = $2', 
+        [challengeId, startupId]
+      );
+      let applicationId;
+      if (apps.length > 0) {
+        applicationId = apps[0].id;
+      } else {
+        // Create baseline application
+        const newApp = await Application.create({
+          challenge_id: challengeId,
+          startup_id: startupId,
+          proposal_summary: 'Auto-generated application for evaluation.',
+          status: 'shortlisted',
+          match_score: 85
+        });
+        applicationId = newApp.id;
+      }
+
+      // 2. Ensure assignment exists
+      const { rows: assigns } = await pool.query(
+        'SELECT id FROM evaluation_assignments WHERE application_id = $1 AND evaluator_id = $2',
+        [applicationId, evaluatorId]
+      );
+      if (assigns.length > 0) {
+        assignmentId = assigns[0].id;
+      } else {
+        const assignment = await EvaluationAssignment.create({
+          applicationId,
+          evaluatorId,
+          assignedBy: req.user.user_id,
+        });
+        assignmentId = assignment.id;
+        
+        await pool.query(
+          `UPDATE applications SET status = 'under_evaluation', updated_at = now() WHERE id = $1`,
+          [applicationId]
+        );
+      }
+      
+      // 3. Map criteria UUIDs
+      let criteria = await EvaluationCriteria.findByChallenge(challengeId);
+      if (criteria.length === 0) {
+        // Auto-seed if empty
+        const defaultNames = ['innovation', 'feasibility', 'scalability', 'cost'];
+        for (const [idx, cname] of defaultNames.entries()) {
+           await EvaluationCriteria.create({
+             challengeId,
+             criterionName: cname.charAt(0).toUpperCase() + cname.slice(1),
+             description: 'Default ' + cname,
+             weight: [30, 25, 25, 20][idx],
+             maxScore: 10,
+             category: 'Technical'
+           });
+        }
+        criteria = await EvaluationCriteria.findByChallenge(challengeId);
+      }
+      
+      // Map string IDs to UUIDs
+      for (let s of scores) {
+         if (typeof s.criterionId === 'string' && s.criterionId.length < 30) {
+             const matched = criteria.find(ac => ac.criterion_name.toLowerCase() === s.criterionId.toLowerCase());
+             if (matched) {
+                 s.criterionId = matched.id;
+             }
+         }
+      }
+    }
+
+    if (!assignmentId) {
+      return res.status(400).json({ success: false, message: 'assignmentId is required.' });
     }
 
     // Verify the assignment belongs to this evaluator

@@ -209,7 +209,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     comments: newScore.comments,
                     justification: ''
                 }));
-                await GovApi.submitEvaluationScores({ assignmentId, scores: scoresForApi });
+                await GovApi.submitEvaluationScores({ 
+                    assignmentId, 
+                    scores: scoresForApi,
+                    challengeId: chId,
+                    startupId: suId,
+                    evaluatorId: evId
+                });
             }
         } catch (err) {
             console.error('Backend submit failed:', err.message);

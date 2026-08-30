@@ -60,7 +60,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Startup Selector
-    function populateStartupSelector() {
+    async function populateStartupSelector() {
+        if (window.GovApi) {
+            try {
+                const res = await GovApi.getStartups();
+                if (res && res.success && res.startups && res.startups.length > 0) {
+                    const mapped = res.startups.map(a => ({
+                        id: a.id,
+                        name: a.company_name || a.startup_name || a.name || a.applicant_name,
+                        sector: a.sector || 'AgriTech / GovTech',
+                        turnover: parseFloat(a.turnover) || 5000000,
+                        dpiitNumber: a.dpiit_number || 'DIPP-PENDING',
+                        pastPilots: parseInt(a.past_pilots) || 0,
+                        stage: a.stage || 'Series A',
+                        city: a.city || 'Bangalore'
+                    }));
+                    GovData.startups = mapped;
+                }
+            } catch (e) {
+                console.log('Live startups fetch notice:', e.message);
+            }
+        }
         if (!GovData.startups || GovData.startups.length === 0) {
             selScreeningSu.innerHTML = '<option value="">-- No Startups Registered --</option>';
             if (screeningSuSummary) screeningSuSummary.innerHTML = '<div class="text-muted small p-2">No startup entity currently selected.</div>';
