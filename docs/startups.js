@@ -236,7 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             turnover: s.past_turnover || 0,
                             stage: s.stage || 'Early',
                             dpiitNumber: s.dpiit_reg_number,
-                            gemRegistered: s.gem_registered
+                            gemRegistered: s.gem_registered,
+                            city: s.city || 'Not Specified',
+                            founders: s.founders || 'Not Specified'
                         }));
                     }
                     renderDirectory();
@@ -399,6 +401,36 @@ document.addEventListener('DOMContentLoaded', () => {
     filterStage?.addEventListener('change', renderDirectory);
 
     // Initial render
-    populateMatchChallenges();
-    renderDirectory();
+    async function initPage() {
+        populateMatchChallenges();
+
+        try {
+            if (window.GovApi) {
+                const refreshRes = await GovApi.getStartups();
+                if (refreshRes.success && refreshRes.startups) {
+                    GovData.startups = refreshRes.startups.map(s => ({
+                        id: s.id,
+                        name: s.company_name || 'Unnamed Startup',
+                        description: s.pitch_summary || 'No description provided.',
+                        sector: s.sector || 'General',
+                        techStack: s.tech_tags || [],
+                        matchTags: s.tech_tags ? s.tech_tags.map(t => t.toLowerCase()) : [],
+                        pastPilots: s.past_pilots || 0,
+                        turnover: s.past_turnover || 0,
+                        stage: s.stage || 'Early',
+                        dpiitNumber: s.dpiit_reg_number,
+                        gemRegistered: s.gem_registered,
+                        city: s.city || 'Not Specified',
+                        founders: s.founders || 'Not Specified'
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load initial startups:', e);
+        }
+
+        renderDirectory();
+    }
+
+    initPage();
 });
