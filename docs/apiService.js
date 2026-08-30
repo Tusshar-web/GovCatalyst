@@ -165,7 +165,7 @@ window.GovApi = {
     async updateStartupProfile(profileData) {
         return this.request('/api/startups/profile', {
             method: 'PUT',
-            body: profileData
+            body: JSON.stringify(profileData)
         });
     },
 
