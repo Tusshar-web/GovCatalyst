@@ -135,7 +135,7 @@ Respond ONLY with valid JSON in this exact structure without markdown or backtic
     };
   }
 }
-}
+
 
 /**
  * Batch scores multiple startups against a single challenge statement.
@@ -191,4 +191,4 @@ Respond ONLY with a valid JSON array in this exact structure, no markdown:
   }
 }
 
-module.exports = { processChallengeInput, scoreProposalWithAI, batchScoreStartups };
+module.exports = { processChallengeInput, scoreProposalWithAI, batchScoreStartups };
