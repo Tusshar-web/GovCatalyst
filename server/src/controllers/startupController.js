@@ -24,7 +24,13 @@ async function aiMatchStartups(req, res) {
       return res.status(404).json({ success: false, message: 'Challenge not found' });
     }
 
-    const startups = await Startup.findAll();
+    let startups = await Startup.findAll();
+    
+    // If the logged-in user is a startup, only evaluate their own profile
+    if (req.user && req.user.role === 'startup') {
+      startups = startups.filter(su => su.user_id === req.user.user_id);
+    }
+
     if (startups.length === 0) {
       return res.json({ success: true, matches: [] });
     }

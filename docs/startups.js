@@ -61,6 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
             challenges.map(c => `
                 <option value="${c.id}">[${c.id}] ${c.title} (${c.category} - ${c.status})</option>
             `).join('');
+
+        if (currentUser && currentUser.role === 'startup') {
+            if (btnRunMatch) btnRunMatch.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Check My Match Score';
+        }
     }
 
     // Run Intelligent Matching Engine
@@ -84,7 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const challenge = challengesList.find(c => c.id == cId);
         if (!challenge) return;
 
-        btnRunMatch.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Matching Capabilities & AI Scoring...';
+        const isStartup = currentUser && currentUser.role === 'startup';
+        btnRunMatch.innerHTML = isStartup 
+            ? '<span class="spinner-border spinner-border-sm me-1"></span> Evaluating My Profile...'
+            : '<span class="spinner-border spinner-border-sm me-1"></span> Matching Capabilities & AI Scoring...';
         btnRunMatch.disabled = true;
 
         try {
@@ -170,7 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Match engine error:', err);
             GovUtils.showToast('Error running match engine.', 'error');
         } finally {
-            btnRunMatch.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Run Intelligent Match Engine';
+            const isStartup = currentUser && currentUser.role === 'startup';
+            btnRunMatch.innerHTML = isStartup 
+                ? '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Check My Match Score'
+                : '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Run Intelligent Match Engine';
             btnRunMatch.disabled = false;
         }
     });
