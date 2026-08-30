@@ -162,6 +162,20 @@ window.GovApi = {
         return this.request('/api/startups');
     },
 
+    async updateStartupProfile(profileData) {
+        return this.request('/api/startups/profile', {
+            method: 'PUT',
+            body: profileData
+        });
+    },
+
+    async getAiStartupMatches(challengeId) {
+        return this.request('/api/startups/ai-match', {
+            method: 'POST',
+            body: { challenge_id: challengeId }
+        });
+    },
+
     async getEvaluators() {
         return this.request('/api/users?role=evaluator');
     },

@@ -37,4 +37,18 @@ async function aiMatchStartups(req, res) {
   }
 }
 
-module.exports = { getStartups, aiMatchStartups };
+async function updateMyProfile(req, res) {
+  try {
+    const user_id = req.user.user_id;
+    const updated = await Startup.updateProfile(user_id, req.body);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Startup profile not found or no fields to update' });
+    }
+    return res.json({ success: true, profile: updated });
+  } catch (err) {
+    console.error('Error updating startup profile:', err);
+    return res.status(500).json({ success: false, message: 'Failed to update profile', error: err.message });
+  }
+}
+
+module.exports = { getStartups, aiMatchStartups, updateMyProfile };
