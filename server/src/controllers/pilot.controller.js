@@ -40,13 +40,20 @@ async function getAllPilots(req, res) {
     // Startups should only see pilots they are assigned to
     if (userRole === 'startup') {
       const Startup = require('../models/startupModel');
+      const User = require('../models/userModel');
+      
+      const user = await User.findById(req.user.user_id);
       const startupProfile = await Startup.findByUserId(req.user.user_id);
       
-      const name1 = startupProfile?.company_name || req.user.name;
-      const name2 = req.user.name;
-      const userId = req.user.user_id;
+      const identifiers = [
+        startupProfile?.company_name,
+        user?.name,
+        req.user?.name,
+        startupProfile?.id,
+        req.user?.user_id
+      ].filter(Boolean);
       
-      const pilots = await Pilot.findByStartupNames(name1, name2, userId);
+      const pilots = await Pilot.findByStartupIdentifiers(identifiers);
       return formatSuccess(res, pilots, 'Pilots retrieved successfully');
     }
 

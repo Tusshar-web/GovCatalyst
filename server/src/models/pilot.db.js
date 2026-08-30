@@ -61,15 +61,42 @@ const Pilot = {
     return rows;
   },
 
-  /** Fetch pilots belonging to a specific startup (case-insensitive substring match on name/company_name, or exact match on UUID) */
-  async findByStartupNames(name1, name2, id) {
+  /** Fetch pilots belonging to a specific startup by any matching identifier (names, aliases, IDs) */
+  async findByStartupIdentifiers(identifiers = []) {
+    if (!identifiers || identifiers.length === 0) return [];
+    
+    const terms = new Set(identifiers.filter(Boolean));
+    identifiers.forEach(id => {
+      if (typeof id === 'string') {
+        if (id.toLowerCase().includes('krisan')) terms.add('kisan');
+        if (id.toLowerCase().includes('kisan')) terms.add('krisan');
+      }
+    });
+
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    terms.forEach(term => {
+      conditions.push(`startup ILIKE $${idx} OR startup = $${idx + 1}`);
+      values.push(`%${term}%`, term);
+      idx += 2;
+    });
+
+    if (conditions.length === 0) return [];
+
     const { rows } = await pool.query(
       `SELECT * FROM gov_pilots 
-       WHERE startup ILIKE $1 OR startup ILIKE $2 OR startup = $3
+       WHERE ${conditions.join(' OR ')}
        ORDER BY created_at DESC`,
-      [`%${name1}%`, `%${name2}%`, id]
+      values
     );
     return rows;
+  },
+
+  /** Fetch pilots belonging to a specific startup (backwards-compatible wrapper) */
+  async findByStartupNames(name1, name2, id) {
+    return this.findByStartupIdentifiers([name1, name2, id]);
   },
 
   /** Fetch one pilot by UUID */
