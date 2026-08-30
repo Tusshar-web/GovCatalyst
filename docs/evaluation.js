@@ -2,7 +2,7 @@
    GovCatalyst — Module 4: Expert Evaluation Logic
    ============================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const evaluatorsList = document.getElementById('evaluators-list');
     const rubricTbody = document.getElementById('rubric-tbody');
     const rankingTbody = document.getElementById('ranking-tbody');
@@ -72,20 +72,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Render Rubric Table
-    function renderRubric() {
-        rubricTbody.innerHTML = GovData.evaluationRubric.map(r => `
+    async function renderRubric() {
+        let rubricData = GovData.evaluationRubric;
+        let cId = (filterRankingChallenge && filterRankingChallenge.value) || (scoreChallenge && scoreChallenge.value);
+
+        try {
+            if (window.GovApi && cId) {
+                const res = await GovApi.getEvaluationCriteria(cId);
+                if (res.success && res.criteria) {
+                    rubricData = res.criteria;
+                }
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
+
+        rubricTbody.innerHTML = rubricData.map(r => `
             <tr>
-                <td class="fw-bold text-navy">${r.category}</td>
+                <td class="fw-bold text-navy">${r.category || r.name || 'Criterion'}</td>
                 <td class="text-center"><span class="badge bg-primary">${r.weight}%</span></td>
-                <td class="text-center fw-semibold">${r.maxScore} pts</td>
+                <td class="text-center fw-semibold">${r.maxScore !== undefined ? r.maxScore : 10} pts</td>
                 <td><small class="text-muted">${r.description}</small></td>
             </tr>
         `).join('');
     }
 
     // Populate Selects in Form
-    function populateFormSelects() {
-        scoreChallenge.innerHTML = GovData.challenges.map(c => `
+    async function populateFormSelects() {
+        let challenges = GovData.challenges;
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) {
+                    challenges = res.challenges;
+                }
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
+
+        scoreChallenge.innerHTML = challenges.map(c => `
             <option value="${c.id}">[${c.id}] ${c.title}</option>
         `).join('');
 
@@ -98,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
 
         filterRankingChallenge.innerHTML = '<option value="">All Challenges</option>' + 
-            GovData.challenges.map(c => `<option value="${c.id}">${c.id} - ${c.title}</option>`).join('');
+            challenges.map(c => `<option value="${c.id}">${c.id} - ${c.title}</option>`).join('');
     }
 
     // Check Conflict of Interest on change
@@ -117,6 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     scoreEvaluator?.addEventListener('change', checkCoi);
     scoreStartup?.addEventListener('change', checkCoi);
+    scoreChallenge?.addEventListener('change', () => {
+        checkCoi();
+        renderRubric();
+    });
 
     // Compute live weighted score
     function updateLiveScore() {
@@ -139,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Form Submission
-    formScorecard?.addEventListener('submit', (e) => {
+    formScorecard?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const suId = scoreStartup.value;
         const chId = scoreChallenge.value;
@@ -160,6 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
             ],
             comments: document.getElementById('inp-score-comments').value.trim() || 'Evaluated per standard GFR rubric.'
         };
+
+        try {
+            if (window.GovApi) {
+                const assignmentId = \`assign_\${evId}_\${suId}\`; // Mock ID as fallback
+                const scores = [
+                    { criterionId: 'innovation', score: newScore.scores.innovation, comments: newScore.comments, justification: '' },
+                    { criterionId: 'feasibility', score: newScore.scores.feasibility, comments: newScore.comments, justification: '' },
+                    { criterionId: 'scalability', score: newScore.scores.scalability, comments: newScore.comments, justification: '' },
+                    { criterionId: 'cost', score: newScore.scores.cost, comments: newScore.comments, justification: '' }
+                ];
+                await GovApi.submitEvaluationScores({ assignmentId, scores });
+            }
+        } catch (err) {
+            console.warn('Backend submit failed, using local data:', err.message);
+        }
 
         // Remove previous if exists from same evaluator for same pair
         GovData.evaluationScores = GovData.evaluationScores.filter(
@@ -284,12 +329,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     }
 
-    filterRankingChallenge?.addEventListener('change', renderRankingTable);
+    filterRankingChallenge?.addEventListener('change', () => {
+        renderRankingTable();
+        renderRubric();
+    });
 
     // Initial render
     renderEvaluators();
-    renderRubric();
-    populateFormSelects();
+    await populateFormSelects();
+    await renderRubric();
     updateLiveScore();
     renderRankingTable();
 });

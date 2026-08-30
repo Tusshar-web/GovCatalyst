@@ -140,14 +140,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Render Dashboard for selected pilot
-    function renderDashboard(pilotId) {
+    async function renderDashboard(pilotId) {
         const p = GovData.pilots.find(item => item.id === pilotId) || GovData.pilots[0];
         if (!p) return;
 
-        const kpis = pilotKpis[pilotId] || [];
-        const telemetry = telemetryStore[pilotId] || [];
-        const alerts = alertsState[pilotId] || [];
-        const evidences = evidenceStore[pilotId] || [];
+        let kpis = pilotKpis[pilotId] || [];
+        let telemetry = telemetryStore[pilotId] || [];
+        let alerts = alertsState[pilotId] || [];
+        let evidences = evidenceStore[pilotId] || [];
+
+        try {
+            if (window.GovApi) {
+                const kpiRes = await GovApi.getPilotKpis(pilotId);
+                if (kpiRes && kpiRes.success && kpiRes.data) kpis = kpiRes.data;
+                
+                const alertsRes = await GovApi.getPilotAlerts(pilotId);
+                if (alertsRes && alertsRes.success && alertsRes.data) alerts = alertsRes.data;
+                
+                const evRes = await GovApi.getPilotEvidences(pilotId);
+                if (evRes && evRes.success && evRes.data) evidences = evRes.data;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
 
         // 1. Defined Outcome Banner
         const defaultOutcomes = {
@@ -322,11 +337,16 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
 
             document.querySelectorAll('.btn-ack-alert').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const alertId = e.currentTarget.dataset.alertId;
                     const alertItem = alerts.find(x => x.id === alertId);
                     if (alertItem) {
                         alertItem.status = 'ACKNOWLEDGED';
+                        try {
+                            if (window.GovApi) await GovApi.acknowledgePilotAlert(pilotId, alertId);
+                        } catch (err) {
+                            console.warn('Failed to ack alert on backend', err);
+                        }
                         GovUtils.showToast(`Alert acknowledged by Dept Officer`, 'success');
                         renderDashboard(pilotId);
                     }

@@ -38,7 +38,6 @@
     <div class="top-bar-clean">
         <div class="container d-flex justify-content-between align-items-center">
             <a href="index.html" class="d-flex align-items-center gap-2 text-decoration-none">
-                <span class="badge bg-warning text-dark font-monospace" style="font-size: 11px;">MSInS</span>
                 <strong style="color: #ffffff; font-size: 17px; letter-spacing: -0.3px;">GovCatalyst</strong>
             </a>
             <!-- 🇮🇳 ONLY Tricolor Hamburger Menu on Right -->
@@ -67,9 +66,10 @@
                     <p>Dynamic 4-phase lifecycle contracting: Setup & Bilateral Agreement → Deployment & Telemetry → Live Testing → Final M&E & Scale</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-gold" id="btn-toggle-milestone-form"><i class="bi bi-plus-circle me-1"></i> Add Milestone</button>
-                    <button class="btn btn-outline-primary" id="btn-auto-4phases" title="Auto-populate standard 4-phase GFR 194 schedule"><i class="bi bi-lightning-charge-fill me-1"></i> Auto-Set 4 Phases</button>
-                    <button class="btn btn-gov-outline" id="btn-view-agreement"><i class="bi bi-file-earmark-pdf me-1"></i> Bilateral Contract Draft</button>
+                    <button class="btn btn-gold" id="btn-toggle-milestone-form" onclick="window.GovMilestones && GovMilestones.toggleMilestoneForm()"><i class="bi bi-plus-circle me-1"></i> Add Milestone</button>
+                    <button class="btn btn-primary" id="btn-new-contract" onclick="window.GovMilestones && GovMilestones.toggleMilestoneForm(true)"><i class="bi bi-file-earmark-plus me-1"></i> New Contract</button>
+                    <button class="btn btn-outline-primary" id="btn-auto-4phases" onclick="window.GovMilestones && GovMilestones.autoSet4Phases()" title="Auto-populate standard 4-phase GFR 194 schedule"><i class="bi bi-lightning-charge-fill me-1"></i> Auto-Set 4 Phases</button>
+                    <button class="btn btn-gov-outline" id="btn-view-agreement" onclick="window.GovMilestones && GovMilestones.openAgreementModal()"><i class="bi bi-file-earmark-pdf me-1"></i> Bilateral Contract Draft</button>
                 </div>
             </div>
 

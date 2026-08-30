@@ -46,31 +46,48 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancelReg?.addEventListener('click', () => toggleReg(false));
 
     // Populate Match dropdown with open challenges
-    function populateMatchChallenges() {
+    async function populateMatchChallenges() {
+        let challenges = GovData.challenges; // fallback default
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) challenges = res.challenges;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
+        
         selMatchChallenge.innerHTML = '<option value="">-- Choose Challenge Statement --</option>' +
-            GovData.challenges.map(c => `
+            challenges.map(c => `
                 <option value="${c.id}">[${c.id}] ${c.title} (${c.category} - ${c.status})</option>
             `).join('');
     }
 
     // Run Intelligent Matching Engine
-    btnRunMatch?.addEventListener('click', () => {
+    btnRunMatch?.addEventListener('click', async () => {
         const cId = selMatchChallenge.value;
         if (!cId) {
             GovUtils.showToast('Please select a challenge statement to run matching.', 'warning');
             return;
         }
 
-        const challenge = GovData.challenges.find(c => c.id === cId);
+        let challengesList = GovData.challenges;
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) challengesList = res.challenges;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable:', e.message);
+        }
+
+        const challenge = challengesList.find(c => c.id == cId);
         if (!challenge) return;
 
         btnRunMatch.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Matching Capabilities & AI Scoring...';
         btnRunMatch.disabled = true;
 
-        setTimeout(() => {
-            btnRunMatch.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Run Intelligent Match Engine';
-            btnRunMatch.disabled = false;
-
+        try {
             // Compute match scores based on sector similarity, category overlap, and tech tags
             const challengeWords = (challenge.title + ' ' + challenge.description + ' ' + challenge.category)
                 .toLowerCase()
@@ -78,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .split(' ')
                 .filter(w => w.length > 2);
 
-            const scoredStartups = GovData.startups.map(su => {
+            const scoredStartups = await Promise.all(GovData.startups.map(async (su) => {
                 let score = 30; // base score
                 
                 // Sector match
@@ -100,8 +117,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 score = Math.min(Math.max(score, 25), 98); // Clamp between 25% and 98%
 
-                return { startup: su, matchScore: score };
-            });
+                let feedback = '';
+                try {
+                    if (window.GovApi) {
+                        const res = await GovApi.applyToChallenge(challenge.id, { proposal_summary: su.description });
+                        if (res.success) {
+                            if (res.score) score = res.score;
+                            if (res.evaluation && res.evaluation.feedback) {
+                                feedback = res.evaluation.feedback;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Backend unavailable, using local data:', e.message);
+                }
+
+                return { startup: su, matchScore: score, feedback };
+            }));
 
             scoredStartups.sort((a, b) => b.matchScore - a.matchScore);
 
@@ -127,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                                 <p class="small text-secondary mb-2 text-truncate-2">${su.description}</p>
+                                ${item.feedback ? `<div class="alert alert-info py-1 px-2 mb-2" style="font-size: 0.75rem;"><strong>AI Feedback:</strong> ${item.feedback}</div>` : ''}
                                 <div class="mb-3">
                                     ${su.techStack.slice(0, 3).map(t => `<span class="tech-tag">${t}</span>`).join('')}
                                 </div>
@@ -150,7 +183,14 @@ document.addEventListener('DOMContentLoaded', () => {
             matchCardsGrid.querySelectorAll('.btn-su-detail').forEach(btn => {
                 btn?.addEventListener('click', () => viewStartupProfile(btn.dataset.id));
             });
-        }, 500);
+            
+        } catch (err) {
+            console.error('Match engine error:', err);
+            GovUtils.showToast('Error running match engine.', 'error');
+        } finally {
+            btnRunMatch.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Run Intelligent Match Engine';
+            btnRunMatch.disabled = false;
+        }
     });
 
     // Form Registration Submission

@@ -2,7 +2,8 @@
    GovCatalyst — Module 1: Challenge Builder Logic
    ============================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    let challengesList = GovData.challenges;
     const tableBody = document.getElementById('challenges-tbody');
     const cardForm = document.getElementById('card-form');
     const btnToggle = document.getElementById('btn-toggle-builder');
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     sector: cat,
                     budget_ceiling: budget
                 });
-                
+
                 if (res.success && res.ai_draft) {
                     document.getElementById('inp-outcome').value = res.ai_draft.outcome_statement;
                     if (res.ai_draft.tech_tags && res.ai_draft.tech_tags.length > 0) {
@@ -92,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Form submission
-    formChallenge?.addEventListener('submit', (e) => {
+    formChallenge?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const newChallenge = {
             id: `CH-00${GovData.challenges.length + 1}`,
@@ -107,20 +108,22 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         GovData.challenges.unshift(newChallenge);
-        
+
         // Dispatch live to PostgreSQL backend if available
         if (window.GovApi) {
-            GovApi.createChallenge({
-                title: newChallenge.title,
-                problem_statement: newChallenge.description,
-                outcome_objective: newChallenge.outcomeStatement,
-                sector: newChallenge.category,
-                department: newChallenge.department
-            }).then(res => {
+            try {
+                const res = await GovApi.createChallenge({
+                    title: newChallenge.title,
+                    problem_statement: newChallenge.description,
+                    outcome_objective: newChallenge.outcomeStatement,
+                    sector: newChallenge.category,
+                    department: newChallenge.department
+                });
                 console.log('✅ Challenge saved in PostgreSQL backend:', res);
-            }).catch(err => {
+                await renderTable();
+            } catch (err) {
                 console.log('Challenge backend sync fallback:', err.message);
-            });
+            }
         }
 
         // Log in audit trail
@@ -136,20 +139,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         formChallenge.reset();
         toggleForm(false);
-        renderTable();
+        await renderTable();
         updateStats();
         GovUtils.showToast(`Challenge ${newChallenge.id} created successfully as Draft!`, 'success');
     });
 
     // Render Table
-    function renderTable() {
+    async function renderTable() {
         const search = searchInput.value.toLowerCase();
         const status = filterStatus.value;
 
-        const filtered = GovData.challenges.filter(c => {
-            const matchesSearch = c.title.toLowerCase().includes(search) || 
-                                  c.department.toLowerCase().includes(search) ||
-                                  c.id.toLowerCase().includes(search);
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) challengesList = res.challenges;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+            challengesList = GovData.challenges;
+        }
+
+        const filtered = challengesList.filter(c => {
+            const matchesSearch = c.title.toLowerCase().includes(search) ||
+                c.department.toLowerCase().includes(search) ||
+                c.id.toLowerCase().includes(search);
             const matchesStatus = !status || c.status === status;
             return matchesSearch && matchesStatus;
         });
@@ -196,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function viewChallengeDetails(id) {
-        const c = GovData.challenges.find(ch => ch.id === id);
+        const c = challengesList.find(ch => ch.id === id);
         if (!c) return;
 
         const content = `
@@ -240,10 +253,21 @@ document.addEventListener('DOMContentLoaded', () => {
         GovUtils.openModal(`Challenge Specification — ${c.id}`, content);
     }
 
-    function publishChallenge(id) {
-        const c = GovData.challenges.find(ch => ch.id === id);
+    async function publishChallenge(id) {
+        let c = GovData.challenges.find(ch => ch.id === id);
+        if (!c) c = challengesList.find(ch => ch.id === id);
+
         if (c) {
-            c.status = 'Published';
+            c.status = 'Published'; // Optimistic GovData mutation
+
+            try {
+                if (window.GovApi) {
+                    await GovApi.publishChallenge(id);
+                }
+            } catch (e) {
+                console.warn('Backend unavailable, using local data:', e.message);
+            }
+
             GovData.auditTrail.unshift({
                 id: GovData.auditTrail.length + 1,
                 timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
@@ -253,23 +277,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 module: 'Challenges',
                 detail: `Published challenge ${c.id} to open innovation portal.`
             });
-            renderTable();
+            await renderTable();
             updateStats();
             GovUtils.showToast(`Challenge ${c.id} is now PUBLISHED and open for startup discovery!`, 'success');
         }
     }
 
     function updateStats() {
-        document.getElementById('cnt-total').textContent = GovData.challenges.length;
-        document.getElementById('cnt-published').textContent = GovData.challenges.filter(c => c.status === 'Published').length;
-        document.getElementById('cnt-matched').textContent = GovData.challenges.filter(c => c.status === 'Matched').length;
-        document.getElementById('cnt-draft').textContent = GovData.challenges.filter(c => c.status === 'Draft').length;
+        document.getElementById('cnt-total').textContent = challengesList.length;
+        document.getElementById('cnt-published').textContent = challengesList.filter(c => c.status === 'Published').length;
+        document.getElementById('cnt-matched').textContent = challengesList.filter(c => c.status === 'Matched').length;
+        document.getElementById('cnt-draft').textContent = challengesList.filter(c => c.status === 'Draft').length;
     }
 
-    searchInput?.addEventListener('input', renderTable);
-    filterStatus?.addEventListener('change', renderTable);
+    searchInput?.addEventListener('input', async () => { await renderTable(); updateStats(); });
+    filterStatus?.addEventListener('change', async () => { await renderTable(); updateStats(); });
 
     // Initial render
-    renderTable();
+    await renderTable();
     updateStats();
 });

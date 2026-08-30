@@ -4,7 +4,7 @@
 <head>
     <!-- Dark Mode & Font Size Fast Load Script (Prevents white flash on load) -->
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('dark-mode');
             if (savedTheme === 'true') {
                 document.documentElement.classList.add('dark-mode');
@@ -69,7 +69,8 @@
                 onclick="window.location.href='milestones.html'"><i class="bi bi-calendar3"></i></button>
             <span class="sep">|</span>
             <div style="position: relative; display: inline-block;">
-                <button id="top-access-btn" title="Accessibility Tools" class="top-icon-btn"><i class="bi bi-universal-access-circle"></i></button>
+                <button id="top-access-btn" title="Accessibility Tools" class="top-icon-btn"><i
+                        class="bi bi-universal-access-circle"></i></button>
                 <div class="access-popover" id="access-popover" style="display: none;">
                     <div class="popover-title">Accessibility Options</div>
                     <div class="popover-row">
@@ -82,7 +83,8 @@
                     </div>
                     <div class="popover-row">
                         <span class="popover-label">Theme:</span>
-                        <button id="theme-toggle" class="popover-theme-btn"><i class="bi bi-moon-stars-fill"></i> Dark Mode</button>
+                        <button id="theme-toggle" class="popover-theme-btn"><i class="bi bi-moon-stars-fill"></i> Dark
+                            Mode</button>
                     </div>
                 </div>
             </div>

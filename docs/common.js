@@ -90,8 +90,8 @@ window.GovLang = {
             langToggleBtn.style.color = this.current === 'mr' ? '#ffc107' : '#ffffff';
         }
 
-        const msg = this.current === 'mr' 
-            ? '🌐 भाषा मराठीत बदलली आहे (Language: Marathi)' 
+        const msg = this.current === 'mr'
+            ? '🌐 भाषा मराठीत बदलली आहे (Language: Marathi)'
             : '🌐 Switched to English language';
         if (window.GovUtils && window.GovUtils.showToast) {
             window.GovUtils.showToast(msg, 'info');
@@ -104,7 +104,9 @@ window.GovLang = {
 // ============================================
 // SECTION 2: MOCK DATA FOR ALL 10 MODULES
 // ============================================
-window.GovData = {
+var GovData = window.GovData = {
+    // Top-level alias
+
 
     // --- MODULE 1: AUTH & REGISTRATION WORKFLOW ---
     // Live data fetched from PostgreSQL via GovApi.getPendingUsers()
@@ -196,7 +198,7 @@ window.GovData = {
         { id: 'EV-003', name: 'Dr. Sunita Rao', expertise: 'Policy & Public Administration', department: 'GAD', coiDeclared: false, coiDetails: '' }
     ],
 
-        evaluationRubric: [
+    evaluationRubric: [
         { category: 'Technical Feasibility', weight: 25, maxScore: 10, description: 'Technical and operational feasibility within government infrastructure constraints' },
         { category: 'Innovation & Novelty', weight: 20, maxScore: 10, description: 'Novelty of approach, technology differentiation, and creative problem solving' },
         { category: 'Alignment with Outcomes', weight: 25, maxScore: 10, description: 'Direct alignment with departmental problem statement and measurable baseline targets' },
@@ -352,19 +354,37 @@ window.GovUtils = {
         }, 3500);
     },
 
-    // Open modal
+    // Open modal (auto-injecting overlay if missing)
     openModal(title, contentHtml) {
-        const overlay = document.getElementById('gov-modal-overlay');
-        if (!overlay) return;
-        document.getElementById('gov-modal-title').textContent = title;
-        document.getElementById('gov-modal-body').innerHTML = contentHtml;
+        let overlay = document.getElementById('gov-modal-overlay');
+        if (!overlay) {
+            const modalHtml = `
+                <div class="gov-modal-overlay" id="gov-modal-overlay">
+                    <div class="gov-modal">
+                        <div class="gov-modal-header">
+                            <h5 id="gov-modal-title">Modal Title</h5>
+                            <button class="gov-modal-close" id="gov-modal-close" onclick="GovUtils.closeModal()">&times;</button>
+                        </div>
+                        <div class="gov-modal-body" id="gov-modal-body"></div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            overlay = document.getElementById('gov-modal-overlay');
+        }
+        const titleEl = document.getElementById('gov-modal-title');
+        const bodyEl = document.getElementById('gov-modal-body');
+        if (titleEl) titleEl.textContent = title;
+        if (bodyEl) bodyEl.innerHTML = contentHtml;
         overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
     },
 
     // Close modal
     closeModal() {
         const overlay = document.getElementById('gov-modal-overlay');
         if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
     },
 
     // Get badge class for status
@@ -1508,7 +1528,7 @@ window.GovApi = {
     getBaseUrl() {
         if (window.GOV_API_BASE) return window.GOV_API_BASE;
         const origin = window.location.origin || '';
-        
+
         // If accessed from GitHub Pages, route to production Render API
         if (origin.includes('github.io')) {
             return 'https://govcatalyst.onrender.com';
@@ -1518,13 +1538,13 @@ window.GovApi = {
         if (window.location.protocol === 'file:') {
             return 'http://localhost:5009';
         }
-        
+
         // If local development on another port (e.g. 5500 Live Server)
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             if (window.location.port === '5009') return '';
             return 'http://localhost:5009';
         }
-        
+
         // Direct Render domain or same-origin deployment
         return '';
     },
@@ -1698,6 +1718,215 @@ window.GovApi = {
         return this.request(`/api/pilots/${pilotId}/recommendations`);
     },
 
+    // --- CHALLENGE CRUD ---
+    async getChallengeById(id) {
+        return this.request(`/api/challenges/${id}`);
+    },
+
+    async getMyChallenges() {
+        return this.request('/api/challenges/my');
+    },
+
+    async updateChallenge(id, data) {
+        return this.request(`/api/challenges/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async publishChallenge(id) {
+        return this.request(`/api/challenges/${id}/publish`, { method: 'PATCH' });
+    },
+
+    // --- APPLICATION ENDPOINTS ---
+    async applyToChallenge(challengeId, proposalData) {
+        return this.request(`/api/applications/challenge/${challengeId}/apply`, {
+            method: 'POST',
+            body: JSON.stringify(proposalData)
+        });
+    },
+
+    async getMyApplications() {
+        return this.request('/api/applications/my');
+    },
+
+    async getApplicationsByChallenge(challengeId, params = '') {
+        return this.request(`/api/applications/challenge/${challengeId}${params ? '?' + params : ''}`);
+    },
+
+    // --- EVALUATION ENDPOINTS ---
+    async getEvaluationCriteria(challengeId) {
+        return this.request(`/api/evaluations/criteria/${challengeId}`);
+    },
+
+    async seedEvaluationCriteria(challengeId) {
+        return this.request(`/api/evaluations/criteria/seed/${challengeId}`, { method: 'POST' });
+    },
+
+    async createEvaluationCriterion(data) {
+        return this.request('/api/evaluations/criteria', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async assignEvaluator(data) {
+        return this.request('/api/evaluations/assign', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async getMyEvalAssignments() {
+        return this.request('/api/evaluations/assignments/my');
+    },
+
+    async submitEvaluationScores(data) {
+        return this.request('/api/evaluations/scores/submit', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async getEvalScoresByApplication(applicationId) {
+        return this.request(`/api/evaluations/scores/${applicationId}`);
+    },
+
+    async finalizePanel(applicationId, summary) {
+        return this.request(`/api/evaluations/panel/${applicationId}/finalize`, {
+            method: 'POST',
+            body: JSON.stringify({ panelSummary: summary })
+        });
+    },
+
+    async getPanelDecision(applicationId) {
+        return this.request(`/api/evaluations/panel/${applicationId}`);
+    },
+
+    async getEvaluationSummary(applicationId) {
+        return this.request(`/api/evaluations/summary/${applicationId}`);
+    },
+
+    async submitAppeal(applicationId, reason, docs) {
+        return this.request(`/api/evaluations/appeal/${applicationId}`, {
+            method: 'POST',
+            body: JSON.stringify({ appealReason: reason, supportingDocs: docs })
+        });
+    },
+
+    async getPendingAppeals() {
+        return this.request('/api/evaluations/appeals/pending');
+    },
+
+    // --- PILOT SUB-RESOURCE ENDPOINTS ---
+    async getPilotKpis(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/kpis`);
+    },
+
+    async createPilotKpi(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/kpis`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async updateKpiReading(pilotId, kpiId, current) {
+        return this.request(`/api/pilots/${pilotId}/kpis/${kpiId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ current })
+        });
+    },
+
+    async getPilotRisks(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/risks`);
+    },
+
+    async createPilotRisk(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/risks`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async getPilotIssues(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/issues`);
+    },
+
+    async createPilotIssue(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/issues`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async getPilotFeedback(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/feedback`);
+    },
+
+    async submitPilotFeedback(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/feedback`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async getPilotEvidences(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/evidences`);
+    },
+
+    async submitPilotEvidence(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/evidences`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async verifyPilotEvidence(pilotId, evidenceId, status) {
+        return this.request(`/api/pilots/${pilotId}/evidences/${evidenceId}/verify`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+        });
+    },
+
+    async getPilotTelemetry(pilotId, limit = 100) {
+        return this.request(`/api/pilots/${pilotId}/telemetry?limit=${limit}`);
+    },
+
+    async batchIngestTelemetry(pilotId, readings, sourceType) {
+        return this.request(`/api/pilots/${pilotId}/telemetry/batch`, {
+            method: 'POST',
+            body: JSON.stringify({ readings, sourceType })
+        });
+    },
+
+    async acknowledgePilotAlert(pilotId, alertId) {
+        return this.request(`/api/pilots/${pilotId}/alerts/${alertId}/ack`, {
+            method: 'PATCH'
+        });
+    },
+
+    async updatePilotStatus(pilotId, targetStatus, reason) {
+        return this.request(`/api/pilots/${pilotId}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ targetStatus, reason })
+        });
+    },
+
+    async evaluatePilot(pilotId, committeeDecision) {
+        return this.request(`/api/pilots/${pilotId}/evaluate`, {
+            method: 'POST',
+            body: JSON.stringify({ committeeDecision })
+        });
+    },
+
+    async getPilotReport(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/report`);
+    },
+
+    async getPilotAudit(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/audit`);
+    },
+
     // --- FILE UPLOADS ---
     async uploadFile(file) {
         const formData = new FormData();
@@ -1731,18 +1960,18 @@ window.GovPageAuth = {
 
     // Page → Allowed Roles mapping
     pageRoles: {
-        'index.html':        ['*'],               // Public landing page
+        'index.html': ['*'],               // Public landing page
         'forgot-password.html': ['*'],            // Public
-        'startups.html':     ['*'],               // Public directory browsing (creation is role-gated)
-        'challenges.html':   ['*'],               // Public challenge browsing (creation is role-gated)
-        'eligibility.html':  ['startup', 'dept_admin', 'super_admin', 'evaluator'],
-        'evaluation.html':   ['evaluator', 'super_admin', 'dept_admin'],
+        'startups.html': ['*'],               // Public directory browsing (creation is role-gated)
+        'challenges.html': ['*'],               // Public challenge browsing (creation is role-gated)
+        'eligibility.html': ['startup', 'dept_admin', 'super_admin', 'evaluator'],
+        'evaluation.html': ['evaluator', 'super_admin', 'dept_admin'],
         'pilot-design.html': ['dept_admin', 'startup', 'super_admin', 'validator'],
-        'milestones.html':   ['dept_admin', 'startup', 'super_admin', 'validator'],
-        'performance.html':  ['dept_admin', 'startup', 'super_admin', 'evaluator', 'validator'],
-        'payments.html':     ['dept_admin', 'super_admin', 'startup'],
-        'scaleup.html':      ['dept_admin', 'startup', 'super_admin'],
-        'admin.html':        ['super_admin', 'dept_admin', 'validator']
+        'milestones.html': ['dept_admin', 'startup', 'super_admin', 'validator'],
+        'performance.html': ['dept_admin', 'startup', 'super_admin', 'evaluator', 'validator'],
+        'payments.html': ['dept_admin', 'super_admin', 'startup'],
+        'scaleup.html': ['dept_admin', 'startup', 'super_admin'],
+        'admin.html': ['super_admin', 'dept_admin', 'validator']
     },
 
     /**
@@ -1788,49 +2017,84 @@ window.GovPageAuth = {
     },
 
     /**
-     * Show branded access-denied overlay
+     * Show branded access-denied overlay matching authentic Maharashtra Gov portal design
      */
     showAccessDenied(reason) {
-        const overlay = document.createElement('div');
-        overlay.id = 'gov-auth-overlay';
-        overlay.style.cssText = `
-            position: fixed; inset: 0; z-index: 99999;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0c1220 100%);
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-        `;
-        overlay.innerHTML = `
-            <div style="text-align: center; color: #e2e8f0; max-width: 480px; padding: 40px;">
-                <div style="font-size: 64px; margin-bottom: 16px;">🔒</div>
-                <h2 style="font-size: 24px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">
-                    Authentication Required
-                </h2>
-                <p style="color: #94a3b8; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
-                    ${reason}
-                </p>
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="window.location.href='index.html'" style="
-                        background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
-                        border: none; padding: 12px 28px; border-radius: 8px; font-size: 14px;
-                        font-weight: 600; cursor: pointer; transition: all 0.2s;
-                    ">
-                        <span style="margin-right: 6px;">🏠</span> Go to Home & Sign In
-                    </button>
-                    <button onclick="history.back()" style="
-                        background: transparent; color: #94a3b8; border: 1px solid #334155;
-                        padding: 12px 28px; border-radius: 8px; font-size: 14px;
-                        font-weight: 500; cursor: pointer;
-                    ">
-                        ← Go Back
-                    </button>
-                </div>
-                <p style="color: #475569; font-size: 12px; margin-top: 32px;">
-                    GovCatalyst • MSInS State Innovation Society • Section 65B Compliant
-                </p>
+        document.body.style.backgroundColor = '#f8fafc';
+        document.body.style.minHeight = '100vh';
+        document.body.style.display = 'flex';
+        document.body.style.flexDirection = 'column';
+
+        document.body.innerHTML = `
+            <!-- Tricolor Strip -->
+            <div class="tricolor-strip">
+                <span class="saffron"></span>
+                <span class="white-s"></span>
+                <span class="green-s"></span>
             </div>
+
+            <!-- Clean Minimal Top Bar -->
+            <div class="top-bar-clean">
+                <div class="container d-flex justify-content-between align-items-center">
+                    <a href="index.html" class="d-flex align-items-center gap-2 text-decoration-none">
+                        <strong style="color: #ffffff; font-size: 17px; letter-spacing: -0.3px;">GovCatalyst</strong>
+                    </a>
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="index.html" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1">
+                            <i class="bi bi-house-door"></i> <span>Home</span>
+                        </a>
+                        <button class="top-tricolor-hamburger" id="gov-hamburger-toggle" onclick="GovNav && GovNav.toggleMegaMenu()" aria-label="Toggle Modules Menu" title="All Modules Menu (10)">
+                            <span class="tri-bar bar-saffron"></span>
+                            <span class="tri-bar bar-white"></span>
+                            <span class="tri-bar bar-green"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Authorization Required Container -->
+            <main class="container py-5 flex-grow-1 d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 180px);">
+                <div class="card shadow-sm border p-4 p-md-5 text-center" style="max-width: 520px; width: 100%; border-radius: 14px; background: #ffffff; border-color: #e2e8f0;">
+                    <!-- Official Gov Shield Badge -->
+                    <div class="d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 64px; height: 64px; border-radius: 50%; background: #fef3c7; border: 2px solid #fde68a;">
+                        <i class="bi bi-shield-lock-fill" style="font-size: 30px; color: #d97706;"></i>
+                    </div>
+                    
+                    <h4 class="fw-bold mb-1" style="color: #0b192c;">Authorization Required</h4>
+                    <div class="text-muted small mb-3">Maharashtra State Innovation Society &bull; GFR Rule 194</div>
+                    
+                    <p class="text-secondary small mb-4" style="line-height: 1.6;">
+                        ${reason}
+                    </p>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="button" class="btn btn-gov py-2 fw-semibold" onclick="window.location.href='index.html?login=1'">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Authorized Account
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary py-2" onclick="window.history.back()">
+                            <i class="bi bi-arrow-left me-1"></i> Return to Previous Page
+                        </button>
+                    </div>
+
+                    <div class="pt-3 border-top text-muted" style="font-size: 11px;">
+                        Official Innovation Procurement Mechanism &bull; Certified under IT Act Section 65B
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="gov-footer" style="margin-top: auto;">
+                <div class="container text-center" style="font-size: 13px;">
+                    © 2026 Government of Maharashtra • IT Act 2000 Section 65B Certified Portal
+                </div>
+            </footer>
+            <div class="tricolor-strip">
+                <span class="saffron"></span>
+                <span class="white-s"></span>
+                <span class="green-s"></span>
+            </div>
+            <div class="toast-container-gov"></div>
         `;
-        document.body.innerHTML = '';
-        document.body.appendChild(overlay);
     },
 
     /**
@@ -1956,6 +2220,10 @@ window.GovPageAuth = {
 
 // Auto-guard on DOMContentLoaded for all pages except index.html
 document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === '1' && window.GovAuth) {
+        setTimeout(() => GovAuth.openAuthModal('login'), 200);
+    }
     const page = GovPageAuth.getCurrentPage();
     if (page !== 'index.html' && page !== 'forgot-password.html' && page !== '') {
         GovPageAuth.require();

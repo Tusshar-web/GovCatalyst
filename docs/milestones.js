@@ -3,6 +3,96 @@
    Supports Dynamic 4-Phase Lifecycle, Escrow Tranches & State Machine
    ============================================= */
 
+window.GovMilestones = {
+    toggleMilestoneForm(show) {
+        const cardMilestoneForm = document.getElementById('card-milestone-form');
+        if (!cardMilestoneForm) return;
+        const willShow = (typeof show === 'boolean') ? show : (cardMilestoneForm.style.display === 'none' || cardMilestoneForm.style.display === '');
+        cardMilestoneForm.style.display = willShow ? 'block' : 'none';
+        if (willShow) {
+            cardMilestoneForm.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                const inpName = document.getElementById('inp-ms-name');
+                if (inpName) inpName.focus();
+            }, 150);
+        }
+    },
+
+    openAgreementModal() {
+        const selPilot = document.getElementById('sel-pilot');
+        const pId = selPilot ? selPilot.value : (GovData.pilots[0] ? GovData.pilots[0].id : 'PLT-001');
+        const p = (GovData.pilots && GovData.pilots.find(item => item.id === pId || item.dbId === pId)) || GovData.pilots[0];
+        if (!p) return;
+        const su = (GovData.startups && GovData.startups.find(s => s.id === p.startupId)) || { name: p.startupId || 'Innovator Entity', founders: 'Startup Founders' };
+        const pMilestones = (GovData.milestones && GovData.milestones.filter(m => m.pilotId === p.id || m.pilotId === pId)) || [];
+
+        const content = `
+            <div class="agreement-print-container border p-4 bg-white">
+                <div class="text-center pb-3 border-bottom mb-4">
+                    <div class="fw-bold" style="font-size: 16px;">GOVERNMENT OF MAHARASHTRA</div>
+                    <div class="text-muted small">Maharashtra State Innovation Society &bull; GFR Rule 194 Innovation Procurement Framework</div>
+                    <h5 class="fw-bold text-navy mt-2">BILATERAL INNOVATION PILOT & 4-PHASE SANDBOX AGREEMENT</h5>
+                    <small class="font-monospace text-muted">Contract Ref: GC-AGR-2026-${p.id}</small>
+                </div>
+
+                <p class="small">This Agreement is executed between the <strong>Department of ${p.challengeId || 'Innovation & Technology'}</strong>, Government of Maharashtra, and <strong>${su.name}</strong> (hereinafter "Innovator").</p>
+
+                <h6 class="fw-bold text-navy mt-3 border-bottom pb-1">1. Scope of Trial Sandbox</h6>
+                <p class="small">The Innovator is authorized to deploy the <strong>${p.name}</strong> in the designated test zone at <strong>${p.location}</strong> for a duration of <strong>${p.duration}</strong> commencing on ${GovUtils.formatDate(p.startDate)}.</p>
+
+                <h6 class="fw-bold text-navy mt-3 border-bottom pb-1">2. Core Legal Covenants</h6>
+                <ol class="small text-secondary ps-3">
+                    ${(GovData.agreementClauses || []).map(cl => `<li class="mb-2"><strong>${cl.category}:</strong> ${cl.text}</li>`).join('')}
+                </ol>
+
+                <h6 class="fw-bold text-navy mt-3 border-bottom pb-1">3. 4-Phase Milestone Schedule & Escrow Payouts</h6>
+                <table class="table table-sm table-bordered small mt-2">
+                    <thead class="table-light">
+                        <tr><th>Phase</th><th>Milestone ID</th><th>Deliverable Description</th><th>Due Date</th><th>Escrow Tranche</th></tr>
+                    </thead>
+                    <tbody>
+                        ${pMilestones.map(m => `
+                            <tr>
+                                <td><span class="badge phase-pill-${m.phase || 1}">Phase ${m.phase || 1}</span></td>
+                                <td>${m.id}</td>
+                                <td><strong>${m.name}</strong><br><small class="text-muted">${m.description}</small></td>
+                                <td>${GovUtils.formatDate(m.dueDate)}</td>
+                                <td class="fw-bold text-navy">${GovUtils.formatCurrency(m.paymentAmount)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="row pt-4 mt-4 border-top text-center small">
+                    <div class="col-6">
+                        <div class="mb-4">_______________________________</div>
+                        <strong>Authorized Department Officer</strong><br>
+                        Government of Maharashtra
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-4">_______________________________</div>
+                        <strong>Authorized Signatory</strong><br>
+                        ${su.name}
+                    </div>
+                </div>
+
+                <div class="text-end mt-4 pt-3 border-top no-print">
+                    <button class="btn btn-outline-dark btn-sm me-2" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print / Save PDF</button>
+                    <button class="btn btn-secondary btn-sm" onclick="GovUtils.closeModal()">Close</button>
+                </div>
+            </div>
+        `;
+
+        GovUtils.openModal(`Bilateral Pilot Agreement — ${p.name}`, content);
+    },
+
+    autoSet4Phases() {
+        const btn = document.getElementById('btn-auto-4phases');
+        if (btn) btn.click();
+    }
+};
+
+
 document.addEventListener('DOMContentLoaded', async () => {
     const selPilot = document.getElementById('sel-pilot');
     const partnerName = document.getElementById('contract-partner-name');
@@ -41,15 +131,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Toggle Form
     function toggleMilestoneForm(show) {
-        if (currentUser && normRole === 'evaluator') {
-            GovUtils.showToast('Evaluator accounts have read-only access to contract milestones.', 'info');
-            return;
+        if (!cardMilestoneForm) return;
+        const willShow = (typeof show === 'boolean') ? show : (cardMilestoneForm.style.display === 'none' || cardMilestoneForm.style.display === '');
+        cardMilestoneForm.style.display = willShow ? 'block' : 'none';
+        if (willShow) {
+            cardMilestoneForm.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                const inpName = document.getElementById('inp-ms-name');
+                if (inpName) inpName.focus();
+            }, 150);
         }
-        cardMilestoneForm.style.display = show ? 'block' : 'none';
-        if (show) cardMilestoneForm.scrollIntoView({ behavior: 'smooth' });
     }
 
-    btnToggleMilestoneForm?.addEventListener('click', () => toggleMilestoneForm(cardMilestoneForm.style.display === 'none'));
+    btnToggleMilestoneForm?.addEventListener('click', () => toggleMilestoneForm());
+    document.getElementById('btn-new-contract')?.addEventListener('click', () => toggleMilestoneForm(true));
     btnCloseMilestoneForm?.addEventListener('click', () => toggleMilestoneForm(false));
     btnCancelMilestoneForm?.addEventListener('click', () => toggleMilestoneForm(false));
 
@@ -257,13 +352,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     // 4. RENDER MILESTONE CARDS GROUPED BY 4 PHASES
     // ─────────────────────────────────────────────────────────────
-    function renderMilestoneCards(pilotId) {
+    async function renderMilestoneCards(pilotId) {
         const p = GovData.pilots.find(item => item.id === pilotId || item.dbId === pilotId);
         if (!p) return;
 
         const su = GovData.startups.find(s => s.id === p.startupId) || { name: p.startupId, sector: 'GovTech' };
         if (partnerName) partnerName.textContent = `${su.name || p.startupId} · ${p.location || 'Maharashtra Sandbox'}`;
         if (pilotStatusBadge) pilotStatusBadge.textContent = p.status || 'Active Sandbox';
+
+        // Try loading KPIs and evidences from backend
+        let backendKpis = [];
+        let backendEvidences = [];
+        const dbId = p.dbId || pilotId;
+        try {
+            if (window.GovApi) {
+                const [kpiRes, evRes] = await Promise.all([
+                    GovApi.getPilotKpis(dbId).catch(() => null),
+                    GovApi.getPilotEvidences(dbId).catch(() => null)
+                ]);
+                if (kpiRes && kpiRes.success && Array.isArray(kpiRes.data)) backendKpis = kpiRes.data;
+                if (evRes && evRes.success && Array.isArray(evRes.data)) backendEvidences = evRes.data;
+            }
+        } catch (e) {
+            console.warn('Backend KPI/evidence fetch fallback:', e.message);
+        }
+
+        // Store backend data for use in milestone cards
+        p._backendKpis = backendKpis;
+        p._backendEvidences = backendEvidences;
 
         // Filter milestones for this pilot
         const pMilestones = GovData.milestones.filter(m => m.pilotId === pilotId);
@@ -447,7 +563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     // 6. ADD NEW MILESTONE FORM SUBMIT
     // ─────────────────────────────────────────────────────────────
-    formAddMilestone?.addEventListener('submit', (e) => {
+    formAddMilestone?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const pId = selPilot.value;
         if (!pId) {
@@ -508,6 +624,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         formAddMilestone.reset();
         toggleMilestoneForm(false);
         renderMilestoneCards(pId);
+
+        // Sync new milestone to backend as a pilot evidence record
+        try {
+            if (window.GovApi) {
+                const pilot = GovData.pilots.find(item => item.id === pId || item.dbId === pId);
+                const backendPilotId = pilot?.dbId || pId;
+                await GovApi.submitPilotEvidence(backendPilotId, {
+                    title: `Phase ${phase}: ${name}`,
+                    description: desc,
+                    evidenceType: evidence || 'milestone_deliverable',
+                    milestoneRef: newId
+                });
+            }
+        } catch (syncErr) {
+            console.warn('Backend milestone sync notice:', syncErr.message);
+        }
 
         GovUtils.showToast(`Milestone ${newId} added to Phase ${phase} successfully!`, 'success');
     });
@@ -603,8 +735,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         GovUtils.openModal(`Bilateral Pilot Agreement — ${p.name}`, content);
     });
 
-    selPilot?.addEventListener('change', (e) => {
-        renderMilestoneCards(e.target.value);
+    selPilot?.addEventListener('change', async (e) => {
+        await renderMilestoneCards(e.target.value);
     });
 
     // ─────────────────────────────────────────────────────────────
@@ -614,7 +746,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderClauses();
     if (GovData.pilots.length > 0) {
         const initialPilotId = selPilot.value || GovData.pilots[0].id;
-        renderMilestoneCards(initialPilotId);
+        await renderMilestoneCards(initialPilotId);
     }
 });
 
