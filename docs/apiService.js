@@ -257,6 +257,15 @@ window.GovApi = {
         });
     },
 
+    async uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.request('/api/upload/single', {
+            method: 'POST',
+            body: formData
+        });
+    },
+
     async getPilotMilestones(pilotId) {
         return this.request(`/api/pilots/${pilotId}/milestones`);
     },

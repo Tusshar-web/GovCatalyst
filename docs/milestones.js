@@ -637,9 +637,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-navy">Evidence Document / Repository Link <span class="text-danger">*</span></label>
-                            <input type="url" class="form-control font-monospace small" id="inp-deliv-url" placeholder="https://..." value="https://sandbox.maharashtra.gov.in/evidence/${mId.toLowerCase()}" required>
+                            <label class="form-label fw-bold small text-navy">Evidence Document / Repository Link</label>
+                            <input type="url" class="form-control font-monospace small" id="inp-deliv-url" placeholder="https://..." value="https://sandbox.maharashtra.gov.in/evidence/${mId.toLowerCase()}">
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-navy">Upload Proof Document / File</label>
+                        <input type="file" class="form-control" id="inp-deliv-file" accept=".pdf,.zip,.json,.png,.csv,.txt,.docx,.xlsx,.jpg">
+                        <div class="form-text text-muted" style="font-size: 11px;">Supported formats: PDF, ZIP, JSON, CSV, Excel, Word, Images. Max 10MB.</div>
                     </div>
 
                     <div class="mb-3">
@@ -671,23 +677,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             const submitBtn = document.getElementById('btn-confirm-submit-deliverable');
             const title = document.getElementById('inp-deliv-title')?.value.trim();
             const docType = document.getElementById('inp-deliv-type')?.value;
-            const url = document.getElementById('inp-deliv-url')?.value.trim();
+            const urlInput = document.getElementById('inp-deliv-url')?.value.trim();
             const notes = document.getElementById('inp-deliv-notes')?.value.trim();
+            const fileInput = document.getElementById('inp-deliv-file');
+
+            let finalUrl = urlInput || null;
 
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting Evidence...';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Preparing submission...';
             }
 
             const backendPilotId = p?.dbId || pId;
             try {
+                // If a file is selected, upload it first to the backend
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading proof file...';
+                    }
+                    const uploadRes = await GovApi.uploadFile(fileInput.files[0]);
+                    if (uploadRes && uploadRes.success && uploadRes.data && uploadRes.data.fileUrl) {
+                        const baseUrl = GovApi.getBaseUrl();
+                        finalUrl = baseUrl ? `${baseUrl}${uploadRes.data.fileUrl}` : window.location.origin + uploadRes.data.fileUrl;
+                    } else {
+                        throw new Error(uploadRes.message || 'File upload failed');
+                    }
+                }
+
                 if (window.GovApi) {
                     // 1. Record evidence in gov_pilot_evidences
                     await GovApi.addPilotEvidence(backendPilotId, {
                         evidenceCode: `EV-${mId}-${Date.now().toString().slice(-4)}`,
                         name: title || `${mId} Deliverable Proof`,
                         documentType: docType || 'Deliverable',
-                        fileUrl: url || null,
+                        fileUrl: finalUrl,
                         relatedMilestone: mId,
                         notes: notes || null,
                         uploadedBy: (currentUser && currentUser.name) || 'Startup Innovator'
