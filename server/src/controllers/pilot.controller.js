@@ -41,11 +41,11 @@ async function getAllPilots(req, res) {
     if (userRole === 'startup') {
       const Startup = require('../models/startupModel');
       const startupProfile = await Startup.findByUserId(req.user.user_id);
-      if (!startupProfile || !startupProfile.company_name) {
-        // No profile yet — return empty list instead of all pilots
-        return formatSuccess(res, [], 'No pilots found for this startup');
-      }
-      const pilots = await Pilot.findByStartupName(startupProfile.company_name);
+      
+      const name1 = startupProfile?.company_name || req.user.name;
+      const name2 = req.user.name;
+      
+      const pilots = await Pilot.findByStartupNames(name1, name2);
       return formatSuccess(res, pilots, 'Pilots retrieved successfully');
     }
 
