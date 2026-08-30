@@ -163,11 +163,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.btn-inspect-screening').forEach(btn => {
             btn?.addEventListener('click', () => {
-                selScreeningSu.value = btn.dataset.id;
-                renderScreeningFor(btn.dataset.id);
-                document.getElementById('screening-su-summary').scrollIntoView({ behavior: 'smooth' });
+                showAuditModal(btn.dataset.id);
             });
         });
+    }
+
+    function showAuditModal(id) {
+        const su = GovData.startups.find(s => s.id === id);
+        if (!su) return;
+        const screening = GovData.startupScreenings.find(s => s.startupId === id);
+        
+        let resultsHtml = '';
+        if (screening) {
+            resultsHtml = screening.results.map(r => `
+                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                    <div><i class="bi ${r.met ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2"></i><strong>${r.rule}</strong></div>
+                    <div class="small text-muted">${r.data}</div>
+                </div>
+            `).join('');
+        } else {
+            resultsHtml = '<div class="text-muted">No detailed screening data available yet. Please run screening from the top panel.</div>';
+        }
+
+        const html = `
+            <div class="p-3">
+                <div class="d-flex justify-content-between mb-3">
+                    <h5 class="fw-bold">${su.name} <span class="badge bg-primary ms-2">${su.dpiitNumber || 'Unverified'}</span></h5>
+                    <span class="badge ${screening && screening.overallStatus === 'ELIGIBLE' ? 'bg-success' : 'bg-danger'}">${screening ? screening.overallStatus : 'PENDING'}</span>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-2">Compliance Audit Trail</h6>
+                    ${resultsHtml}
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-outline-primary btn-sm me-2" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print Report</button>
+                    <button class="btn btn-secondary btn-sm" onclick="GovUtils.closeModal()">Close</button>
+                </div>
+            </div>
+        `;
+        GovUtils.openModal(`Audit Log: ${su.name}`, html);
     }
 
     // Event Listeners
@@ -183,7 +217,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-export-screening')?.addEventListener('click', () => {
-        GovUtils.showToast('Eligibility Audit Log exported to PDF / CSV (GFR 194 Compliance Report).', 'success');
+        if (!GovData.startups || GovData.startups.length === 0) {
+            GovUtils.showToast('No data to export.', 'warning');
+            return;
+        }
+        
+        const headers = ['Entity Name', 'Sector', 'DPIIT Cert', 'Turnover', 'Prototype Stage', 'Final Status'];
+        const rows = GovData.startups.map(su => {
+            const screening = GovData.startupScreenings.find(s => s.startupId === su.id);
+            const status = screening ? screening.overallStatus : (su.dpiitNumber ? 'ELIGIBLE' : 'NOT ELIGIBLE');
+            return [
+                `"${su.name.replace(/"/g, '""')}"`,
+                `"${su.sector}"`,
+                `"${su.dpiitNumber || 'None'}"`,
+                su.turnover,
+                `"${su.stage}"`,
+                `"${status}"`
+            ];
+        });
+        
+        let csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(',') + "\n" 
+            + rows.map(e => e.join(",")).join("\n");
+            
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "govcatalyst_screening_log.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        GovUtils.showToast('Eligibility Audit Log exported successfully.', 'success');
     });
 
     // Initialize
