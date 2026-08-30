@@ -44,6 +44,47 @@ graph TD
 
 ---
 
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    subgraph Client ["Client Layer (HTML5 / Bootstrap 5 / Vanilla JS)"]
+        Landing["GovCatalyst Portal (docs/index.html)"]
+        ChallengesUI["Challenges & AI Rewriter (challenges.html)"]
+        EvaluationUI["Expert Rubric Panel (evaluation.html)"]
+        PilotUI["Pilot Sandbox Builder (pilot-design.html)"]
+        PerfUI["10-Step Telemetry Dashboard (performance.html)"]
+        AdminUI["Admin & Validator Sign-off (admin.html)"]
+    end
+
+    subgraph APIClient ["Central API Dispatcher (common.js)"]
+        GovApi["GovApi REST Client + JWT Auto-Auth + Fallback Engine"]
+    end
+
+    subgraph Backend ["Backend Layer (Express 5 / Node.js)"]
+        AuthMW["JWT & RBAC Middleware"]
+        UploadMW["Multer Multipart File Handler (15MB Limit)"]
+        AIEngine["Google Gemini AI Engine (@google/genai)"]
+        PilotEngine["State Machine & Telemetry Service"]
+        ReportGen["Form 194-E Evaluation Generator"]
+    end
+
+    subgraph Database ["Data & Storage Layer"]
+        Postgres[("PostgreSQL Database (27 Tables)")]
+        FileStorage["Secure Uploads Directory (/uploads)"]
+        AuditLogs[("Section 65B Immutable Audit Ledger")]
+    end
+
+    Client --> APIClient
+    APIClient --> Backend
+    Backend --> Postgres
+    Backend --> FileStorage
+    Backend --> AuditLogs
+    Backend --> AIEngine
+```
+
+---
+
 ## ⚖️ Regulatory & Compliance Framework
 
 > [!IMPORTANT]
