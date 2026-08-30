@@ -44,8 +44,9 @@ async function getAllPilots(req, res) {
       
       const name1 = startupProfile?.company_name || req.user.name;
       const name2 = req.user.name;
+      const userId = req.user.user_id;
       
-      const pilots = await Pilot.findByStartupNames(name1, name2);
+      const pilots = await Pilot.findByStartupNames(name1, name2, userId);
       return formatSuccess(res, pilots, 'Pilots retrieved successfully');
     }
 

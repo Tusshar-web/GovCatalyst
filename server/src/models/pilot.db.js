@@ -61,13 +61,13 @@ const Pilot = {
     return rows;
   },
 
-  /** Fetch pilots belonging to a specific startup (case-insensitive substring match on name/company_name) */
-  async findByStartupNames(name1, name2) {
+  /** Fetch pilots belonging to a specific startup (case-insensitive substring match on name/company_name, or exact match on UUID) */
+  async findByStartupNames(name1, name2, id) {
     const { rows } = await pool.query(
       `SELECT * FROM gov_pilots 
-       WHERE startup ILIKE $1 OR startup ILIKE $2 
+       WHERE startup ILIKE $1 OR startup ILIKE $2 OR startup = $3
        ORDER BY created_at DESC`,
-      [`%${name1}%`, `%${name2}%`]
+      [`%${name1}%`, `%${name2}%`, id]
     );
     return rows;
   },
