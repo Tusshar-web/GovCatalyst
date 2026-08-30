@@ -155,6 +155,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         let pilots = GovData.pilots || [];
 
         if (window.GovApi) {
+            // Show a loading placeholder in the dropdown
+            if (selPilot) selPilot.innerHTML = '<option disabled selected>Loading pilots from database…</option>';
             try {
                 const res = await GovApi.getPilots();
                 if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
@@ -174,13 +176,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     pilots = livePilots;
                 }
             } catch (e) {
-                console.log('Pilots fetch notice:', e.message);
+                console.warn('Pilots fetch error:', e.message);
+                GovUtils.showToast('Could not fetch pilots from backend. Showing local data.', 'warning');
             }
         }
 
         if (selPilot) {
             selPilot.innerHTML = pilots.map(p => `
-                <option value="${p.id}" ${p.id === prePilotId || p.dbId === prePilotId ? 'selected' : ''}>
+                <option value="${p.dbId || p.id}" ${(p.dbId === prePilotId || p.id === prePilotId) ? 'selected' : ''}>
                     [${p.id}] ${p.name} (${p.status})
                 </option>
             `).join('');
@@ -279,45 +282,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     // 4. RENDER MILESTONE CARDS GROUPED BY 4 PHASES
     // ─────────────────────────────────────────────────────────────
-    async function renderMilestoneCards(pilotId) {
-        const p = GovData.pilots.find(item => item.id === pilotId || item.dbId === pilotId);
+    async function renderMilestoneCards(pilotDbId) {
+        const p = GovData.pilots.find(item => item.dbId === pilotDbId || item.id === pilotDbId);
         if (!p) return;
+        const dbId = p.dbId || pilotDbId;
 
-        const su = GovData.startups.find(s => s.id === p.startupId) || { name: p.startupId, sector: 'GovTech' };
-        if (partnerName) partnerName.textContent = `${su.name || p.startupId} · ${p.location || 'Maharashtra Sandbox'}`;
+        if (partnerName) partnerName.textContent = `${p.startup || p.startupId || 'Innovator'} · ${p.location || 'Maharashtra Sandbox'}`;
         if (pilotStatusBadge) pilotStatusBadge.textContent = p.status || 'Active Sandbox';
 
-        // Try loading KPIs and evidences from backend
-        let backendKpis = [];
-        let backendEvidences = [];
-        const dbId = p.dbId || pilotId;
+        // Show loading skeleton while fetching
+        if (cardsContainer) {
+            cardsContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="d-flex align-items-center gap-2 py-4 text-muted justify-content-center">
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                        <span class="small fw-semibold">Fetching milestone data from database…</span>
+                    </div>
+                </div>`;
+        }
+
+        // Fetch KPIs, evidences and milestones from backend in parallel
+        let backendKpis = [], backendEvidences = [], pMilestones = [];
         try {
             if (window.GovApi) {
-                const [kpiRes, evRes] = await Promise.all([
+                const [kpiRes, evRes, msRes] = await Promise.all([
                     GovApi.getPilotKpis(dbId).catch(() => null),
-                    GovApi.getPilotEvidences(dbId).catch(() => null)
+                    GovApi.getPilotEvidences(dbId).catch(() => null),
+                    GovApi.getPilotMilestones(dbId).catch(() => null)
                 ]);
                 if (kpiRes && kpiRes.success && Array.isArray(kpiRes.data)) backendKpis = kpiRes.data;
                 if (evRes && evRes.success && Array.isArray(evRes.data)) backendEvidences = evRes.data;
-            }
-        } catch (e) {
-            console.warn('Backend KPI/evidence fetch fallback:', e.message);
-        }
-
-        // Store backend data for use in milestone cards
-        p._backendKpis = backendKpis;
-        p._backendEvidences = backendEvidences;
-
-        // Filter milestones for this pilot
-        let pMilestones = [];
-        try {
-            if (window.GovApi) {
-                const msRes = await GovApi.getPilotMilestones(dbId);
                 if (msRes && msRes.success && Array.isArray(msRes.data)) {
                     pMilestones = msRes.data.map(m => ({
                         id: m.milestone_code,
                         dbId: m.id,
-                        pilotId: pilotId,
+                        pilotId: pilotDbId,
                         phase: m.phase,
                         name: m.name,
                         description: m.description,
@@ -331,14 +330,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         } catch (e) {
-            console.warn('Backend milestones fetch fallback:', e.message);
-            pMilestones = GovData.milestones.filter(m => m.pilotId === pilotId);
+            console.warn('Backend data fetch fallback:', e.message);
+            // Fall back to local store and show a non-blocking warning
+            pMilestones = GovData.milestones.filter(m => m.pilotId === p.id);
+            if (cardsContainer) {
+                const warn = document.createElement('div');
+                warn.className = 'col-12';
+                warn.innerHTML = `<div class="alert alert-warning alert-dismissible small py-2 mb-2" role="alert">
+                    <i class="bi bi-wifi-off me-1"></i> Could not reach backend — showing cached data.
+                    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+                </div>`;
+                cardsContainer.prepend(warn);
+            }
         }
 
-        // Cache the fetched milestones for use in agreement modal
+        // Cache for agreement modal and other uses
+        p._backendKpis = backendKpis;
+        p._backendEvidences = backendEvidences;
         p._backendMilestones = pMilestones;
+        GovData.milestones = GovData.milestones.filter(m => m.pilotId !== p.id && m.pilotId !== pilotDbId);
+        GovData.milestones.push(...pMilestones.map(m => ({ ...m, pilotId: p.id })));
 
-        // Update stats
+        // Update summary stats
         const total = pMilestones.length;
         const completed = pMilestones.filter(m => m.status === 'Completed').length;
         const totalEscrow = pMilestones.reduce((sum, m) => sum + (m.paymentAmount || 0), 0);
@@ -473,7 +486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     async function advanceMilestoneState(mId, dbId, nextState) {
         const pId = selPilot.value;
-        const p = GovData.pilots.find(item => item.id === pId || item.dbId === pId);
+        const p = GovData.pilots.find(item => item.dbId === pId || item.id === pId);
         const backendPilotId = p?.dbId || pId;
 
         try {
@@ -580,10 +593,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     btnViewAgreement?.addEventListener('click', () => {
         const pId = selPilot.value;
-        const p = GovData.pilots.find(item => item.id === pId || item.dbId === pId);
+        const p = GovData.pilots.find(item => item.dbId === pId || item.id === pId);
         if (!p) return;
-        const su = GovData.startups.find(s => s.id === p.startupId) || { name: p.startupId, founders: 'Startup Founders' };
-        const pMilestones = GovData.milestones.filter(m => m.pilotId === pId);
+        const su = { name: p.startup || p.startupId || 'Innovator Entity' };
+        // Use live milestones cached from the last renderMilestoneCards call
+        const pMilestones = p._backendMilestones || GovData.milestones.filter(m => m.pilotId === p.id);
 
         const content = `
             <div class="agreement-print-container border p-4 bg-white">
@@ -655,7 +669,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     await populatePilots();
     renderClauses();
     if (GovData.pilots.length > 0) {
-        const initialPilotId = selPilot.value || GovData.pilots[0].id;
+        const initial = GovData.pilots.find(p => p.dbId === prePilotId || p.id === prePilotId) || GovData.pilots[0];
+        const initialPilotId = initial.dbId || initial.id;
+        if (selPilot) selPilot.value = initialPilotId;
         await renderMilestoneCards(initialPilotId);
     }
 });

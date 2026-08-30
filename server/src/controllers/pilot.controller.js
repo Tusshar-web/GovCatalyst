@@ -800,7 +800,7 @@ async function createMilestone(req, res) {
       ...req.body
     });
     
-    await PilotAuditLog.logAction(pilot.id, req.user?.user_id, 'Milestone Created', `Created ${milestone.milestone_code}`);
+    await PilotAuditLog.log({ pilotId: pilot.id, userId: req.user?.user_id || null, action: 'Milestone Created', detail: `Created ${milestone.milestone_code}` });
     return formatSuccess(res, milestone, 'Milestone created', 201);
   } catch (err) {
     return formatError(res, err.message);
@@ -816,7 +816,7 @@ async function updateMilestoneStatus(req, res) {
     const milestone = await PilotMilestone.updateStatus(milestoneId, status, completedDate);
     if (!milestone) return formatError(res, 'Milestone not found', 404);
     
-    await PilotAuditLog.logAction(milestone.pilot_id, req.user?.user_id, 'Milestone Updated', `Status changed to ${status}`);
+    await PilotAuditLog.log({ pilotId: milestone.pilot_id, userId: req.user?.user_id || null, action: 'Milestone Updated', detail: `Status changed to ${status}` });
     return formatSuccess(res, milestone, 'Milestone status updated');
   } catch (err) {
     return formatError(res, err.message);
@@ -829,7 +829,15 @@ async function autoGenerateMilestones(req, res) {
     if (!pilot) return formatError(res, 'Pilot not found', 404);
     
     const existing = await PilotMilestone.findByPilot(pilot.id);
-    if (existing.length > 0) return formatError(res, 'Milestones already exist for this pilot', 400);
+    // Allow re-provisioning only if no milestone has been started yet
+    if (existing.length > 0) {
+      const hasStarted = existing.some(m => m.status !== 'Pending');
+      if (hasStarted) {
+        return formatError(res, 'Cannot re-provision: one or more milestones are already in progress or completed.', 400);
+      }
+      // Safe to wipe and re-seed
+      await PilotMilestone.deleteByPilot(pilot.id);
+    }
 
     const phases = [
       { code: 'MS-01', phase: 1, name: 'Setup & Bilateral Agreement', desc: 'Indemnity, legal covenants & baseline scoping', days: 10, pct: 15 },
@@ -855,7 +863,7 @@ async function autoGenerateMilestones(req, res) {
       });
     }
 
-    await PilotAuditLog.logAction(pilot.id, req.user?.user_id, 'Milestones Auto-Generated', 'Standard 4-phase tranches set');
+    await PilotAuditLog.log({ pilotId: pilot.id, userId: req.user?.user_id || null, action: 'Milestones Auto-Generated', detail: 'Standard 4-phase tranches set' });
     const milestones = await PilotMilestone.findByPilot(pilot.id);
     return formatSuccess(res, milestones, '4-Phase Milestones provisioned successfully', 201);
   } catch (err) {

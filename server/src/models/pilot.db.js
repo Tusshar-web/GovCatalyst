@@ -525,6 +525,13 @@ const PilotMilestone = {
       [status, completedDate, id]
     );
     return rows[0];
+  },
+
+  async deleteByPilot(pilotId) {
+    await pool.query(
+      'DELETE FROM gov_pilot_milestones WHERE pilot_id = $1',
+      [pilotId]
+    );
   }
 };
 
