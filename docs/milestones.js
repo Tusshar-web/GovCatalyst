@@ -674,7 +674,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-navy">Evidence Document / Repository Link</label>
-                            <input type="url" class="form-control font-monospace small" id="inp-deliv-url" placeholder="https://..." value="https://sandbox.maharashtra.gov.in/evidence/${mId.toLowerCase()}">
+                            <input type="url" class="form-control font-monospace small" id="inp-deliv-url" placeholder="e.g. https://github.com/my-project or paste URL" value="">
                         </div>
                     </div>
 
@@ -717,6 +717,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const notes = document.getElementById('inp-deliv-notes')?.value.trim();
             const fileInput = document.getElementById('inp-deliv-file');
 
+            const hasFile = fileInput && fileInput.files && fileInput.files[0];
+            
+            if (!urlInput && !hasFile) {
+                GovUtils.showToast('Please upload a proof file or provide an evidence document link URL.', 'warning');
+                return;
+            }
+
             let finalUrl = urlInput || null;
 
             if (submitBtn) {
@@ -727,7 +734,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const backendPilotId = p?.dbId || pId;
             try {
                 // If a file is selected, upload it first to the backend
-                if (fileInput && fileInput.files && fileInput.files[0]) {
+                if (hasFile) {
                     if (submitBtn) {
                         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading proof file...';
                     }
