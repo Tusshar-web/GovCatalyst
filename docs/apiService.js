@@ -145,6 +145,15 @@ window.GovApi = {
         });
     },
 
+    // --- USERS & STARTUPS ENDPOINTS ---
+    async getStartups() {
+        return this.request('/api/startups');
+    },
+
+    async getEvaluators() {
+        return this.request('/api/users?role=evaluator');
+    },
+
     // --- APPLICATIONS ENDPOINTS ---
     async getApplications() {
         return this.request('/api/applications');

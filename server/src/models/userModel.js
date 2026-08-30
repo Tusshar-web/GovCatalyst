@@ -47,6 +47,15 @@ async updateStatus(userId, status, approvedBy = null) {
   );
   return rows[0];
 },
+
+  async findAllByRole(role) {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, role, department_name, designation, created_at 
+       FROM users WHERE role = $1 AND account_status = 'active'`,
+      [role]
+    );
+    return rows;
+  },
 };
 
 

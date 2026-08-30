@@ -16,10 +16,7 @@ var GovData = window.GovData = {
     ],
 
     // --- MODULE 2: STARTUPS ---
-    startups: [
-        { id: 'SU-101', name: 'GovTech Innovations Ltd.', stage: 'Growth', sector: 'AI/ML' },
-        { id: 'SU-102', name: 'Civic Solutions Pvt.', stage: 'Early', sector: 'GovTech' }
-    ],
+    startups: [],
 
     // --- MODULE 3: ELIGIBILITY CRITERIA (STATUTORY RULES) ---
     eligibilityCriteria: [
@@ -33,10 +30,7 @@ var GovData = window.GovData = {
     startupScreenings: [],
 
     // --- MODULE 4: EVALUATION ---
-    evaluators: [
-        { id: 'EV-001', name: 'Dr. Expert Reviewer', department: 'Tech Review Board' },
-        { id: 'EV-002', name: 'Prof. Data Science', department: 'IT Department' }
-    ],
+    evaluators: [],
     evaluationRubric: [
         { category: 'Technical Feasibility', weight: 25, maxScore: 10, description: 'Technical and operational feasibility within government infrastructure constraints' },
         { category: 'Innovation & Novelty', weight: 20, maxScore: 10, description: 'Novelty of approach, technology differentiation, and creative problem solving' },

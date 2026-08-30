@@ -100,31 +100,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Populate Selects in Form
     async function populateFormSelects() {
         let challenges = GovData.challenges;
+        let startups = GovData.startups;
+        let evaluators = GovData.evaluators;
+
         try {
             if (window.GovApi) {
-                const res = await GovApi.getChallenges();
-                if (res.success && res.challenges) {
-                    challenges = res.challenges;
-                }
+                const resC = await GovApi.getChallenges();
+                if (resC.success && resC.challenges) challenges = resC.challenges;
+
+                const resS = await GovApi.getStartups();
+                if (resS.success && resS.startups) startups = resS.startups;
+
+                const resE = await GovApi.getEvaluators();
+                if (resE.success && resE.users) evaluators = resE.users;
             }
         } catch (e) {
             console.warn('Backend unavailable, using local data:', e.message);
         }
 
+        // Also update local GovData just so functions like checkCoi can find them
+        GovData.evaluators = evaluators;
+        GovData.startups = startups;
+
         scoreChallenge.innerHTML = challenges.map(c => `
-            <option value="${c.id}">[${c.id}] ${c.title}</option>
+            <option value="${c.id}">[${c.id.substring(0,8) || c.id}] ${c.title}</option>
         `).join('');
 
-        scoreStartup.innerHTML = GovData.startups.map(s => `
-            <option value="${s.id}">[${s.id}] ${s.name}</option>
+        scoreStartup.innerHTML = startups.map(s => `
+            <option value="${s.id}">[${s.id.substring(0,8) || s.id}] ${s.company_name || s.name}</option>
         `).join('');
 
-        scoreEvaluator.innerHTML = GovData.evaluators.map(e => `
-            <option value="${e.id}">${e.name} (${e.department})</option>
+        scoreEvaluator.innerHTML = evaluators.map(e => `
+            <option value="${e.id}">${e.name} (${e.department_name || e.department || 'Evaluator'})</option>
         `).join('');
 
         filterRankingChallenge.innerHTML = '<option value="">All Challenges</option>' + 
-            challenges.map(c => `<option value="${c.id}">${c.id} - ${c.title}</option>`).join('');
+            challenges.map(c => `<option value="${c.id}">${c.id.substring(0,8) || c.id} - ${c.title}</option>`).join('');
     }
 
     // Check Conflict of Interest on change

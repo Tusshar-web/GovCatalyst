@@ -64,6 +64,11 @@ const Startup = {
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
+
+  async findAll() {
+    const { rows } = await pool.query('SELECT * FROM startups ORDER BY created_at DESC');
+    return rows;
+  }
 };
 
 module.exports = Startup;
