@@ -17,6 +17,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let exemptionsEnabled = true;
 
+    function getOrCreateScreening(su) {
+        let screening = GovData.startupScreenings.find(sc => sc.startupId === su.id);
+        if (!screening) {
+            const metTurnover = exemptionsEnabled ? su.turnover >= 2500000 : su.turnover >= 100000000;
+            const metDpiit = !!su.dpiitNumber && su.dpiitNumber !== 'DIPP-PENDING';
+            const metProto = su.stage !== 'Seed' || su.pastPilots > 0;
+            const metPilots = exemptionsEnabled ? su.pastPilots >= 1 : su.pastPilots >= 3;
+            
+            screening = {
+                startupId: su.id,
+                results: [
+                    { criterionId: 'EC-1', rule: 'Annual Turnover', met: metTurnover, value: GovUtils.formatCurrency(su.turnover), notes: metTurnover ? 'Qualifies under relaxed norms' : 'Below relaxed turnover threshold' },
+                    { criterionId: 'EC-2', rule: 'Years of Operation', met: true, value: `${2026 - parseInt(su.founded || '2022')} years`, notes: 'Operating with prototype' },
+                    { criterionId: 'EC-3', rule: 'DPIIT Recognition', met: metDpiit, value: su.dpiitNumber || 'None', notes: metDpiit ? 'Valid DPIIT Certificate' : 'Pending DPIIT' },
+                    { criterionId: 'EC-4', rule: 'Prototype / MVP Readiness', met: metProto, value: su.stage + ' Demo', notes: 'MVP Demonstrated' },
+                    { criterionId: 'EC-5', rule: 'Team Credentials', met: true, value: 'Domain Founder', notes: su.founders },
+                    { criterionId: 'EC-6', rule: 'Past Government Projects', met: metPilots, value: `${su.pastPilots} pilots`, notes: metPilots ? 'Meets experience track' : 'Insufficient pilots' }
+                ],
+                overallStatus: (metTurnover && metDpiit && metProto) ? 'ELIGIBLE' : 'NOT ELIGIBLE'
+            };
+            GovData.startupScreenings.push(screening);
+        }
+        return screening;
+    }
+
     // Render Rules Matrix Table
     function renderRulesMatrix() {
         criteriaTbody.innerHTML = GovData.eligibilityCriteria.map(ec => `
@@ -70,27 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         // Retrieve or compute screening results
-        let screening = GovData.startupScreenings.find(sc => sc.startupId === suId);
-        if (!screening) {
-            // Auto-generate screening
-            const metTurnover = exemptionsEnabled ? su.turnover >= 2500000 : su.turnover >= 100000000;
-            const metDpiit = !!su.dpiitNumber && su.dpiitNumber !== 'DIPP-PENDING';
-            const metProto = su.stage !== 'Seed' || su.pastPilots > 0;
-            const metPilots = exemptionsEnabled ? su.pastPilots >= 1 : su.pastPilots >= 3;
-            
-            screening = {
-                startupId: suId,
-                results: [
-                    { criterionId: 'EC-1', met: metTurnover, value: GovUtils.formatCurrency(su.turnover), notes: metTurnover ? 'Qualifies under relaxed norms' : 'Below relaxed turnover threshold' },
-                    { criterionId: 'EC-2', met: true, value: `${2026 - parseInt(su.founded || '2022')} years`, notes: 'Operating with prototype' },
-                    { criterionId: 'EC-3', met: metDpiit, value: su.dpiitNumber || 'None', notes: metDpiit ? 'Valid DPIIT Certificate' : 'Pending DPIIT' },
-                    { criterionId: 'EC-4', met: metProto, value: su.stage + ' Demo', notes: 'MVP Demonstrated' },
-                    { criterionId: 'EC-5', met: true, value: 'Domain Founder', notes: su.founders },
-                    { criterionId: 'EC-6', met: metPilots, value: `${su.pastPilots} pilots`, notes: metPilots ? 'Meets experience track' : 'Insufficient pilots' }
-                ],
-                overallStatus: (metTurnover && metDpiit && metProto) ? 'ELIGIBLE' : 'NOT ELIGIBLE'
-            };
-        }
+        const screening = getOrCreateScreening(su);
 
         // Checklist Table
         let metCount = 0;
@@ -139,9 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         batchTbody.innerHTML = GovData.startups.map(su => {
-            const screening = GovData.startupScreenings.find(s => s.startupId === su.id);
-            const status = screening ? screening.overallStatus : (su.dpiitNumber ? 'ELIGIBLE' : 'NOT ELIGIBLE');
-            const criteriaPassed = screening ? screening.results.filter(r => r.met).length : (status === 'ELIGIBLE' ? 5 : 2);
+            const screening = getOrCreateScreening(su);
+            const status = screening.overallStatus;
+            const criteriaPassed = screening.results.filter(r => r.met).length;
 
             return `
                 <tr>
@@ -171,19 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function showAuditModal(id) {
         const su = GovData.startups.find(s => s.id === id);
         if (!su) return;
-        const screening = GovData.startupScreenings.find(s => s.startupId === id);
+        const screening = getOrCreateScreening(su);
         
-        let resultsHtml = '';
-        if (screening) {
-            resultsHtml = screening.results.map(r => `
-                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
-                    <div><i class="bi ${r.met ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2"></i><strong>${r.rule}</strong></div>
-                    <div class="small text-muted">${r.data}</div>
-                </div>
-            `).join('');
-        } else {
-            resultsHtml = '<div class="text-muted">No detailed screening data available yet. Please run screening from the top panel.</div>';
-        }
+        let resultsHtml = screening.results.map(r => `
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                <div><i class="bi ${r.met ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2"></i><strong>${r.rule}</strong></div>
+                <div class="small text-muted">${r.value} &bull; ${r.notes}</div>
+            </div>
+        `).join('');
 
         const html = `
             <div class="p-3">
@@ -224,8 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const headers = ['Entity Name', 'Sector', 'DPIIT Cert', 'Turnover', 'Prototype Stage', 'Final Status'];
         const rows = GovData.startups.map(su => {
-            const screening = GovData.startupScreenings.find(s => s.startupId === su.id);
-            const status = screening ? screening.overallStatus : (su.dpiitNumber ? 'ELIGIBLE' : 'NOT ELIGIBLE');
+            const screening = getOrCreateScreening(su);
+            const status = screening.overallStatus;
             return [
                 `"${su.name.replace(/"/g, '""')}"`,
                 `"${su.sector}"`,
