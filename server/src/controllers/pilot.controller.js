@@ -797,20 +797,25 @@ async function createMilestone(req, res) {
   if (!allowedRoles.includes(userRole)) {
     return formatError(res, 'Access denied. Insufficient permissions to create milestones.', 403);
   }
-  // Normalize payload: map milestoneCode to milestone_code for DB column compatibility
-  const { milestoneCode, ...rest } = req.body || {};
-  const payload = { ...rest };
-  if (milestoneCode) payload.milestone_code = milestoneCode;
 
   try {
     const pilot = await resolvePilot(req.params.id);
     if (!pilot) return formatError(res, 'Pilot not found', 404);
-    
+
+    const body = req.body || {};
+    // PilotMilestone.create() uses explicit destructuring — pass camelCase milestoneCode directly.
+    // The frontend sends milestoneCode; accept it as-is (no rename needed).
     const milestone = await PilotMilestone.create({
-      pilotId: pilot.id,
-      ...payload
+      pilotId:       pilot.id,
+      milestoneCode: body.milestoneCode || body.milestone_code,
+      phase:         body.phase,
+      name:          body.name,
+      description:   body.description,
+      dueDate:       body.dueDate || body.due_date,
+      paymentAmount: body.paymentAmount || body.payment_amount,
+      paymentLinked: body.paymentLinked !== undefined ? body.paymentLinked : (body.payment_linked !== undefined ? body.payment_linked : true)
     });
-    
+
     await PilotAuditLog.log({ pilotId: pilot.id, userId: req.user?.user_id || null, action: 'Milestone Created', detail: `Created ${milestone.milestone_code}` });
     return formatSuccess(res, milestone, 'Milestone created', 201);
   } catch (err) {
