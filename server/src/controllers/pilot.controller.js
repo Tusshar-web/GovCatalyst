@@ -791,13 +791,24 @@ async function getMilestones(req, res) {
 }
 
 async function createMilestone(req, res) {
+  // Only allow authorized roles to create milestones
+  const allowedRoles = ['startup', 'dept_admin', 'super_admin'];
+  const userRole = req.user?.role?.toLowerCase?.();
+  if (!allowedRoles.includes(userRole)) {
+    return formatError(res, 'Access denied. Insufficient permissions to create milestones.', 403);
+  }
+  // Normalize payload: map milestoneCode to milestone_code for DB column compatibility
+  const { milestoneCode, ...rest } = req.body || {};
+  const payload = { ...rest };
+  if (milestoneCode) payload.milestone_code = milestoneCode;
+
   try {
     const pilot = await resolvePilot(req.params.id);
     if (!pilot) return formatError(res, 'Pilot not found', 404);
     
     const milestone = await PilotMilestone.create({
       pilotId: pilot.id,
-      ...req.body
+      ...payload
     });
     
     await PilotAuditLog.log({ pilotId: pilot.id, userId: req.user?.user_id || null, action: 'Milestone Created', detail: `Created ${milestone.milestone_code}` });
