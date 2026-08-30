@@ -193,14 +193,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             if (window.GovApi) {
-                const assignmentId = \`assign_\${evId}_\${suId}\`; // Mock ID as fallback
-                const scores = [
-                    { criterionId: 'innovation', score: newScore.scores.innovation, comments: newScore.comments, justification: '' },
-                    { criterionId: 'feasibility', score: newScore.scores.feasibility, comments: newScore.comments, justification: '' },
-                    { criterionId: 'scalability', score: newScore.scores.scalability, comments: newScore.comments, justification: '' },
-                    { criterionId: 'cost', score: newScore.scores.cost, comments: newScore.comments, justification: '' }
-                ];
-                await GovApi.submitEvaluationScores({ assignmentId, scores });
+                const scoresForApi = newScore.scores.map(s => ({
+                    ...s,
+                    comments: newScore.comments,
+                    justification: ''
+                }));
+                await GovApi.submitEvaluationScores({ assignmentId, scores: scoresForApi });
             }
         } catch (err) {
             console.warn('Backend submit failed, using local data:', err.message);
@@ -219,7 +217,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             role: 'Evaluator',
             action: 'Score Submission',
             module: 'Evaluation',
-            detail: `Submitted scorecard for ${suId} on ${chId} with weighted score ${GovUtils.calcWeightedScore(newScore.scores)}`
+            detail: `Submitted scorecard for ${suId} on ${chId} with weighted score ${GovUtils.calcWeightedScore({
+                innovation: parseInt(rngInno.value, 10),
+                feasibility: parseInt(rngFeas.value, 10),
+                scalability: parseInt(rngScal.value, 10),
+                cost: parseInt(rngCost.value, 10)
+            })}`
         });
 
         formScorecard.reset();
