@@ -71,36 +71,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ─── RAG Calculator ─────────────────────────────────────────────────
+    // NOTE: The pass/fail decision (RAG + status) is NOT recalculated here.
+    // It is computed once, server-side, in pilot.service.js#calculateKPIImprovement
+    // every time a telemetry reading is ingested, and persisted on the KPI row
+    // as `status` (ACHIEVED | ON_TRACK | CRITICAL_BEHIND | PENDING). This function
+    // only derives display-only numbers (improvement %, progress % for the bar)
+    // and maps the backend's own status to a badge — it never re-decides RAG
+    // itself, so it can't drift from the backend's calculation.
     function calculateRAG(kpi) {
-        let improvement = 0, progress = 0, isAchieved = false;
+        let improvement = 0, progress = 0;
 
         if (kpi.direction === 'lower') {
             improvement = ((kpi.baseline - kpi.current) / (kpi.baseline || 1)) * 100;
-            isAchieved  = kpi.current <= kpi.target;
             const denom = kpi.baseline - kpi.target;
             progress    = denom !== 0 ? ((kpi.baseline - kpi.current) / denom) * 100 : 100;
         } else {
             improvement = ((kpi.current - kpi.baseline) / (kpi.baseline || 1)) * 100;
-            isAchieved  = kpi.current >= kpi.target;
             const denom = kpi.target - kpi.baseline;
             progress    = denom !== 0 ? ((kpi.current - kpi.baseline) / denom) * 100 : 100;
         }
 
-        const impPercent     = Math.round(improvement * 10) / 10;
+        const impPercent      = Math.round(improvement * 10) / 10;
         const clampedProgress = Math.round(Math.max(0, Math.min(progress, 120)) * 10) / 10;
 
-        let rag = 'YELLOW', status = 'At Risk', badgeClass = 'bg-warning text-dark';
-
-        if (isAchieved || clampedProgress >= 100) {
-            rag = 'GREEN'; status = 'Achieved'; badgeClass = 'bg-success';
-        } else if (kpi.direction === 'lower'
-            ? kpi.current <= kpi.minAcceptable
-            : kpi.current >= kpi.minAcceptable) {
-            rag = clampedProgress >= 70 ? 'GREEN' : 'YELLOW';
-            status = 'On Track';
-            badgeClass = rag === 'GREEN' ? 'bg-success' : 'bg-warning text-dark';
-        } else {
-            rag = 'RED'; status = 'Lagging Behind'; badgeClass = 'bg-danger';
+        // Map the backend's canonical status to RAG. PENDING means no telemetry
+        // has been ingested for this KPI yet — that's "awaiting data", not a
+        // failure, so it must not render as a critical breach.
+        let rag, status, badgeClass;
+        switch (kpi.backendStatus) {
+            case 'ACHIEVED':
+                rag = 'GREEN'; status = 'Achieved'; badgeClass = 'bg-success';
+                break;
+            case 'ON_TRACK':
+                // Backend only distinguishes ACHIEVED/ON_TRACK/CRITICAL_BEHIND;
+                // progress here just refines the badge shade within ON_TRACK,
+                // using the same 75% threshold as pilot.service.js.
+                rag = clampedProgress >= 75 ? 'GREEN' : 'YELLOW';
+                status = 'On Track';
+                badgeClass = rag === 'GREEN' ? 'bg-success' : 'bg-warning text-dark';
+                break;
+            case 'CRITICAL_BEHIND':
+                rag = 'RED'; status = 'Lagging Behind'; badgeClass = 'bg-danger';
+                break;
+            case 'PENDING':
+            default:
+                rag = 'PENDING'; status = 'Awaiting Data'; badgeClass = 'bg-secondary';
+                break;
         }
 
         return { improvement: impPercent, progress: clampedProgress, rag, status, badgeClass };
@@ -149,7 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
             baseline:      parseFloat(k.baseline)       || 0,
             target:        parseFloat(k.target)         || 0,
             minAcceptable: parseFloat(k.min_acceptable) || 0,
-            current:       parseFloat(k.current)        || 0
+            current:       parseFloat(k.current)        || 0,
+            // Canonical status computed server-side (pilot.service.js) on every
+            // telemetry ingestion — ACHIEVED | ON_TRACK | CRITICAL_BEHIND | PENDING.
+            // We trust this instead of re-deriving pass/fail on the frontend.
+            backendStatus: k.status || 'PENDING'
         }));
 
         liveAlerts    = alerts;
@@ -186,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ── 2 & 3 & 5. KPI Cards with RAG ────────────────────────────
-        let greenCount = 0, yellowCount = 0, redCount = 0;
+        let greenCount = 0, yellowCount = 0, redCount = 0, pendingCount = 0;
 
         if (!liveKpis.length) {
             kpiCardsGrid.innerHTML = `
@@ -201,11 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { improvement, progress, rag, status, badgeClass } = calculateRAG(k);
                 if (rag === 'GREEN') greenCount++;
                 else if (rag === 'YELLOW') yellowCount++;
+                else if (rag === 'PENDING') pendingCount++;
                 else redCount++;
 
                 return `
                     <div class="col-md-4">
-                        <div class="gov-card h-100 mb-0 border-top border-4 ${rag === 'GREEN' ? 'border-success' : (rag === 'YELLOW' ? 'border-warning' : 'border-danger')}">
+                        <div class="gov-card h-100 mb-0 border-top border-4 ${rag === 'GREEN' ? 'border-success' : (rag === 'YELLOW' ? 'border-warning' : (rag === 'PENDING' ? 'border-secondary' : 'border-danger'))}">
                             <div class="gov-card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <span class="badge bg-light text-navy border font-monospace">${k.code}</span>
@@ -240,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
 
                                 <div class="progress mb-2" style="height: 8px;">
-                                    <div class="progress-bar ${rag === 'GREEN' ? 'bg-success' : (rag === 'YELLOW' ? 'bg-warning' : 'bg-danger')}"
+                                    <div class="progress-bar ${rag === 'GREEN' ? 'bg-success' : (rag === 'YELLOW' ? 'bg-warning' : (rag === 'PENDING' ? 'bg-secondary' : 'bg-danger'))}"
                                          role="progressbar" style="width: ${progress}%;"></div>
                                 </div>
 
@@ -256,11 +277,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ── Overall Health Score ─────────────────────────────────────
-        const total = liveKpis.length || 1;
-        const healthPercent = Math.round(((greenCount + (yellowCount * 0.5)) / total) * 100);
-        if (healthScore) healthScore.textContent = `${healthPercent}%`;
+        // KPIs still awaiting a first telemetry reading (PENDING) are excluded
+        // from the ratio — a pilot that simply hasn't reported data yet must
+        // not be scored as if it had failed its targets.
+        const scoredCount   = greenCount + yellowCount + redCount;
+        const allPending    = liveKpis.length > 0 && scoredCount === 0;
+        const healthPercent = scoredCount > 0
+            ? Math.round(((greenCount + (yellowCount * 0.5)) / scoredCount) * 100)
+            : 0;
 
-        if (healthPercent >= 85) {
+        if (allPending) {
+            if (healthScore) { healthScore.textContent = '—'; healthScore.className = 'fs-4 fw-extrabold text-muted'; }
+            if (healthLabel) { healthLabel.className = 'badge bg-secondary p-2'; healthLabel.textContent = 'AWAITING TELEMETRY DATA'; }
+        } else if (healthScore) {
+            healthScore.textContent = `${healthPercent}%`;
+        }
+
+        if (allPending) {
+            // Skip the RAG-based label below; already set above.
+        } else if (healthPercent >= 85) {
             if (healthScore) healthScore.className = 'fs-4 fw-extrabold text-success';
             if (healthLabel) { healthLabel.className = 'badge bg-success p-2'; healthLabel.textContent = 'EXCELLENT / TARGETS ACHIEVED'; }
         } else if (healthPercent >= 60) {
