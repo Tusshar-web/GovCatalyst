@@ -36,65 +36,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalReport = new bootstrap.Modal(document.getElementById('modalEvaluationReport'));
     const modalEvidence = new bootstrap.Modal(document.getElementById('modalUploadEvidence'));
 
-    // Extended mock telemetry & alert state per pilot
-    const telemetryStore = {
-        'PLT-001': [
-            { timestamp: '2026-08-28 16:30', kpiId: 'KPI-001', kpiName: 'Garbage Collection Operating Cost', value: 42.0, unit: '₹ L/mo', baseline: 50.0, target: 42.5, source: 'GOVT_ERP', sourceRef: 'MCGM SAP-FIN Billing ERP', direction: 'lower' },
-            { timestamp: '2026-08-28 14:15', kpiId: 'KPI-002', kpiName: 'Fleet Diesel Fuel Consumption', value: 14200, unit: 'Liters/mo', baseline: 18000, target: 14500, source: 'IOT_SENSOR', sourceRef: 'HPCL Automated Fleet Telematics #88', direction: 'lower' },
-            { timestamp: '2026-08-27 11:00', kpiId: 'KPI-003', kpiName: 'Route Adherence & Service Efficiency', value: 94.5, unit: '% Adherence', baseline: 76.0, target: 92.0, source: 'IOT_SENSOR', sourceRef: 'GPS Geo-Fence Real-Time Engine', direction: 'higher' },
-            { timestamp: '2026-08-26 09:45', kpiId: 'KPI-004', kpiName: 'Citizen Grievance Resolution Time', value: 4.2, unit: 'hours', baseline: 24.0, target: 6.0, source: 'REST_API', sourceRef: 'Aaple Sarkar Grievance API Webhook', direction: 'lower' }
-        ],
-        'PLT-002': [
-            { timestamp: '2026-08-28 15:20', kpiId: 'KPI-005', kpiName: 'Distribution Pipeline Leak Detection', value: 64.0, unit: '% Detected', baseline: 40.0, target: 85.0, source: 'IOT_SENSOR', sourceRef: 'Acoustic Pipe Pressure Sensor Node #12', direction: 'higher' },
-            { timestamp: '2026-08-27 10:00', kpiId: 'KPI-006', kpiName: 'Non-Revenue Water (NRW) Loss Reduction', value: 28.5, unit: '% Loss', baseline: 38.0, target: 20.0, source: 'CSV_UPLOAD', sourceRef: 'Ward-K Bulk Flow Meter Batch CSV', direction: 'lower' },
-            { timestamp: '2026-08-26 12:30', kpiId: 'KPI-007', kpiName: 'Acoustic Sensor Triangulation Latency', value: 8.5, unit: 'minutes', baseline: 45.0, target: 10.0, source: 'REST_API', sourceRef: 'SCADA Telemetry Endpoint', direction: 'lower' }
-        ]
-    };
-
-    // Extended 4-8 KPIs per pilot
-    const pilotKpis = {
-        'PLT-001': [
-            { id: 'KPI-001', code: 'KPI-COST', name: 'Garbage Collection Operating Cost', category: 'Cost Reduction', unit: '₹ L/mo', baseline: 50.0, target: 42.5, current: 42.0, minAcceptable: 45.0, direction: 'lower', readings: [{ week: 1, value: 49.2 }, { week: 2, value: 47.8 }, { week: 3, value: 45.5 }, { week: 4, value: 44.0 }, { week: 5, value: 43.1 }, { week: 6, value: 42.0 }] },
-            { id: 'KPI-002', code: 'KPI-FUEL', name: 'Fleet Diesel Fuel Consumption', category: 'Energy & Fuel', unit: 'L/mo', baseline: 18000, target: 14500, current: 14200, minAcceptable: 16000, direction: 'lower', readings: [{ week: 1, value: 17500 }, { week: 2, value: 16800 }, { week: 3, value: 15900 }, { week: 4, value: 15200 }, { week: 5, value: 14700 }, { week: 6, value: 14200 }] },
-            { id: 'KPI-003', code: 'KPI-EFF', name: 'Route Adherence & Service Efficiency', category: 'Service Efficiency', unit: '%', baseline: 76.0, target: 92.0, current: 94.5, minAcceptable: 85.0, direction: 'higher', readings: [{ week: 1, value: 78.0 }, { week: 2, value: 83.5 }, { week: 3, value: 88.0 }, { week: 4, value: 91.0 }, { week: 5, value: 93.0 }, { week: 6, value: 94.5 }] },
-            { id: 'KPI-004', code: 'KPI-COMP', name: 'Citizen Grievance Resolution Time', category: 'Citizen Complaints', unit: 'hours', baseline: 24.0, target: 6.0, current: 4.2, minAcceptable: 8.0, direction: 'lower', readings: [{ week: 1, value: 20.5 }, { week: 2, value: 14.0 }, { week: 3, value: 9.2 }, { week: 4, value: 6.5 }, { week: 5, value: 5.0 }, { week: 6, value: 4.2 }] },
-            { id: 'KPI-005', code: 'KPI-SAF', name: 'Sanitation Worker Hazardous Exposure', category: 'Safety & Health', unit: 'Incidents', baseline: 12, target: 0, current: 0, minAcceptable: 2, direction: 'lower', readings: [{ week: 1, value: 6 }, { week: 2, value: 3 }, { week: 3, value: 1 }, { week: 4, value: 0 }, { week: 5, value: 0 }, { week: 6, value: 0 }] }
-        ],
-        'PLT-002': [
-            { id: 'KPI-006', code: 'KPI-LEAK', name: 'Distribution Pipeline Leak Detection', category: 'Service Efficiency', unit: '% Detected', baseline: 40.0, target: 85.0, current: 64.0, minAcceptable: 60.0, direction: 'higher', readings: [{ week: 1, value: 44.0 }, { week: 2, value: 51.0 }, { week: 3, value: 58.0 }, { week: 4, value: 64.0 }] },
-            { id: 'KPI-007', code: 'KPI-NRW', name: 'Non-Revenue Water (NRW) Loss', category: 'Cost Reduction', unit: '% Loss', baseline: 38.0, target: 20.0, current: 28.5, minAcceptable: 25.0, direction: 'lower', readings: [{ week: 1, value: 36.0 }, { week: 2, value: 33.5 }, { week: 3, value: 30.2 }, { week: 4, value: 28.5 }] },
-            { id: 'KPI-008', code: 'KPI-RESP', name: 'Triangulation Detection Latency', category: 'Service Efficiency', unit: 'minutes', baseline: 45.0, target: 10.0, current: 8.5, minAcceptable: 15.0, direction: 'lower', readings: [{ week: 1, value: 38.0 }, { week: 2, value: 24.0 }, { week: 3, value: 14.0 }, { week: 4, value: 8.5 }] },
-            { id: 'KPI-009', code: 'KPI-COMPL', name: 'Water Contamination Citizen Complaints', category: 'Citizen Complaints', unit: 'per ward/mo', baseline: 85, target: 15, current: 32, minAcceptable: 25, direction: 'lower', readings: [{ week: 1, value: 72 }, { week: 2, value: 55 }, { week: 3, value: 41 }, { week: 4, value: 32 }] }
-        ]
-    };
-
-    // Supporting Evidence per pilot
-    const evidenceStore = {
-        'PLT-001': [
-            { id: 'EV-101', name: 'Monthly Municipal Waste Invoices (Jun–Aug 2026)', type: 'Invoices / Billing Receipts', kpi: 'Cost Reduction (KPI-001)', date: '2026-08-25', status: 'Verified' },
-            { id: 'EV-102', name: 'HPCL Automated Fleet Telematics Diesel Logs', type: 'System Audit Logs', kpi: 'Fuel Consumption (KPI-002)', date: '2026-08-26', status: 'Verified' },
-            { id: 'EV-103', name: 'GPS Geo-Fence GeoJSON Vehicle Route Traces', type: 'GPS Telematics Trace', kpi: 'Service Efficiency (KPI-003)', date: '2026-08-27', status: 'Verified' },
-            { id: 'EV-104', name: 'Aaple Sarkar Citizen Grievance Audit Trail', type: 'Citizen Audit Report', kpi: 'Citizen Complaints (KPI-004)', date: '2026-08-28', status: 'Verified' }
-        ],
-        'PLT-002': [
-            { id: 'EV-201', name: 'Ward-K SCADA Flow Meter Acoustic Logs', type: 'System Audit Logs', kpi: 'Leak Detection (KPI-006)', date: '2026-08-20', status: 'Verified' },
-            { id: 'EV-202', name: 'Bulk Distribution Water Pressure Test Logs', type: 'Laboratory Test Report', kpi: 'NRW Loss (KPI-007)', date: '2026-08-22', status: 'Pending Review' }
-        ]
-    };
-
-    // Active threshold alerts
-    let alertsState = {
-        'PLT-001': [],
-        'PLT-002': [
-            { id: 'ALT-201', severity: 'WARNING', title: 'Target Threshold Warning: Non-Revenue Water Loss', message: 'NRW Loss reduction is 3.5% below the expected target milestone for Month 2 (Current: 28.5%, Target Milestone: 25.0%).', kpi: 'Non-Revenue Water Loss', time: '2026-08-28 11:30', status: 'ACTIVE' }
-        ]
-    };
+    // Telemetry, KPI, Evidence and Alert data stores (populated from backend API)
+    const telemetryStore = {};
+    const pilotKpis = {};
+    const evidenceStore = {};
+    let alertsState = {};
 
     // Populate Pilot selector
-    function populatePilots() {
-        selPilot.innerHTML = GovData.pilots.map(p => `
-            <option value="${p.id}">[${p.id}] ${p.name} — ${p.department}</option>
-        `).join('');
+    async function populatePilots() {
+        let pilots = GovData.pilots || [];
+        if (window.GovApi) {
+            try {
+                const res = await GovApi.getPilots();
+                if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+                    const livePilots = res.data.map(p => ({
+                        id: p.pilot_code || (p.id ? `PLT-${p.id.substring(0, 6)}` : 'PLT-001'),
+                        dbId: p.id,
+                        name: p.name || 'Sandbox Pilot',
+                        department: p.department || 'Government Department',
+                        status: p.status || 'Active'
+                    }));
+                    GovData.pilots = livePilots;
+                    pilots = livePilots;
+                }
+            } catch (e) {
+                console.warn('Pilots fetch fallback:', e.message);
+            }
+        }
+        if (selPilot) {
+            if (pilots.length === 0) {
+                selPilot.innerHTML = '<option value="">-- No Sandbox Pilots Found --</option>';
+            } else {
+                selPilot.innerHTML = pilots.map(p => `
+                    <option value="${p.id}">[${p.id}] ${p.name} — ${p.department || 'Gov'}</option>
+                `).join('');
+            }
+        }
     }
 
     // Calculate RAG indicator and % improvement
@@ -698,8 +675,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize
-    populatePilots();
-    if (GovData.pilots.length > 0) {
-        renderDashboard(selPilot.value || GovData.pilots[0].id);
+    async function init() {
+        await populatePilots();
+        if (GovData.pilots && GovData.pilots.length > 0) {
+            const initId = selPilot?.value || GovData.pilots[0].id;
+            await renderDashboard(initId);
+        }
     }
+    init();
 });
