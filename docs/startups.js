@@ -99,11 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let score = 30; // base score
                 
                 // Sector match
-                if (su.sector.toLowerCase() === challenge.category.toLowerCase()) score += 35;
-                else if ((su.sector === 'AI/ML' && challenge.category === 'Software') || (su.sector === 'IoT' && challenge.category === 'Hardware')) score += 20;
+                const suSector = su.sector || '';
+                const chCategory = challenge.category || challenge.sector || '';
+                if (suSector && chCategory && suSector.toLowerCase() === chCategory.toLowerCase()) score += 35;
+                else if ((suSector === 'AI/ML' && chCategory === 'Software') || (suSector === 'IoT' && chCategory === 'Hardware')) score += 20;
 
                 // Tag overlap
-                const tagOverlap = su.matchTags.filter(t => challengeWords.some(cw => cw.includes(t) || t.includes(cw))).length;
+                const matchTags = su.matchTags || su.tech_tags || [];
+                const tagOverlap = matchTags.filter(t => typeof t === 'string' && challengeWords.some(cw => cw.includes(t.toLowerCase()) || t.toLowerCase().includes(cw))).length;
                 score += tagOverlap * 12;
 
                 // Past pilots boost
