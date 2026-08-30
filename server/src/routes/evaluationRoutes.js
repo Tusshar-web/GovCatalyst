@@ -78,7 +78,7 @@ router.get('/scores/:applicationId',
 // ── Panel Decision ────────────────────────────────────────────────
 // Finalize panel — compute weighted avg and generate recommendation
 router.post('/panel/:applicationId/finalize',
-  requireRole('dept_admin', 'super_admin'),
+  requireRole('dept_admin', 'super_admin', 'evaluator'),
   ctrl.finalizePanel
 );
 // View panel decision
