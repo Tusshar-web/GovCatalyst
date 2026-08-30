@@ -155,7 +155,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (res.success && res.challenges) {
                     challengesList = res.challenges.map(c => ({
                         ...c,
-                        status: c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Draft'
+                        status: c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Draft',
+                        category: c.category || c.sector || 'Uncategorized',
+                        department: c.department || 'Government Department',
+                        description: c.description || c.raw_problem_input || 'N/A',
+                        outcomeStatement: c.outcomeStatement || c.outcome_statement || 'N/A',
+                        createdDate: c.createdDate || c.created_at || new Date().toISOString()
                     }));
                 }
             }
