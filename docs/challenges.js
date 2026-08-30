@@ -202,6 +202,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <button class="btn btn-outline-success btn-publish" data-id="${c.id}" title="Publish to Startups">
                                 <i class="bi bi-send"></i> Publish
                             </button>
+                            <button class="btn btn-outline-danger btn-delete" data-id="${c.id}" title="Delete Draft">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         ` : ''}
                     </div>
                 </td>
@@ -215,6 +218,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         document.querySelectorAll('.btn-publish').forEach(btn => {
             btn?.addEventListener('click', () => publishChallenge(btn.dataset.id));
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn?.addEventListener('click', () => deleteChallengeUI(btn.dataset.id));
         });
     }
 
@@ -268,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!c) c = challengesList.find(ch => ch.id === id);
 
         if (c) {
-            c.status = 'Published'; // Optimistic GovData mutation
+            c.status = 'Published';
 
             try {
                 if (window.GovApi) {
@@ -276,7 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } catch (e) {
                 console.error('Backend unavailable or failed:', e.message);
-                c.status = 'Draft'; // Revert optimistic update
+                c.status = 'Draft';
                 GovUtils.showToast('Failed to publish challenge.', 'error');
                 return;
             }
@@ -284,15 +291,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             GovData.auditTrail.unshift({
                 id: GovData.auditTrail.length + 1,
                 timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                user: 'Shri Rajesh Verma',
-                role: 'Dept Admin',
+                user: currentUser ? currentUser.name : 'Shri Rajesh Verma',
+                role: currentUser ? currentUser.role : 'Dept Admin',
                 action: 'Challenge Published',
                 module: 'Challenges',
-                detail: `Published challenge ${c.id} to open innovation portal.`
+                detail: `Published Challenge ${c.id}: ${c.title}`
             });
             await renderTable();
             updateStats();
-            GovUtils.showToast(`Challenge ${c.id} is now PUBLISHED and open for startup discovery!`, 'success');
+            GovUtils.showToast('Challenge Statement Published Successfully!', 'success');
+        }
+    }
+
+    async function deleteChallengeUI(id) {
+        if (!confirm('Are you sure you want to delete this draft challenge?')) return;
+        
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.deleteChallenge(id);
+                if (res.success) {
+                    challengesList = challengesList.filter(c => c.id !== id);
+                    GovData.challenges = GovData.challenges.filter(c => c.id !== id);
+                    GovUtils.showToast('Challenge deleted successfully!', 'success');
+                    await renderTable();
+                    updateStats();
+                } else {
+                    GovUtils.showToast('Failed to delete challenge.', 'error');
+                }
+            }
+        } catch (e) {
+            console.error('Delete error:', e.message);
+            GovUtils.showToast('Failed to delete challenge.', 'error');
         }
     }
 

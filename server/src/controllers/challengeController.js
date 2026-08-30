@@ -140,6 +140,35 @@ async function draftWithAI(req, res) {
   }
 }
 
+// DELETE /api/challenges/:id
+async function deleteChallenge(req, res) {
+  try {
+    const challenge = await Challenge.findById(req.params.id);
+    if (!challenge) {
+      return res.status(404).json({ success: false, message: 'Challenge not found' });
+    }
+    
+    // Only allow owner or super_admin
+    if (req.user.role !== 'super_admin' && challenge.dept_admin_id !== req.user.user_id) {
+      return res.status(403).json({ success: false, message: 'You do not own this challenge' });
+    }
+
+    if (challenge.status === 'published') {
+      return res.status(400).json({ success: false, message: 'Cannot delete a published challenge' });
+    }
+
+    const deleted = await Challenge.deleteById(req.params.id);
+    if (!deleted) {
+      return res.status(500).json({ success: false, message: 'Failed to delete challenge' });
+    }
+
+    return res.json({ success: true, message: 'Challenge deleted successfully' });
+  } catch (err) {
+    console.error('deleteChallenge error:', err);
+    return res.status(500).json({ success: false, message: 'Error deleting challenge' });
+  }
+}
+
 module.exports = {
   createChallenge,
   listChallenges,
@@ -148,4 +177,5 @@ module.exports = {
   updateChallenge,
   publishChallenge,
   draftWithAI,
+  deleteChallenge,
 };

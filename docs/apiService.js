@@ -144,6 +144,12 @@ window.GovApi = {
         });
     },
 
+    async deleteChallenge(id) {
+        return this.request(`/api/challenges/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
     async generateChallengeDraft(draftData) {
         return this.request('/api/challenges/ai-draft', {
             method: 'POST',

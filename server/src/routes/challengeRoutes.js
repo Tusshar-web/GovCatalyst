@@ -7,7 +7,8 @@ const {
   getMyChallenges,
   updateChallenge,
   publishChallenge,
-  draftWithAI
+  draftWithAI,
+  deleteChallenge
 } = require('../controllers/challengeController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
@@ -20,5 +21,6 @@ router.get('/my', authenticate, requireRole('dept_admin', 'super_admin'), getMyC
 router.get('/:id', authenticate, getChallenge);
 router.patch('/:id', authenticate, requireRole('dept_admin', 'super_admin'), validateRequest(validators.challengeUpdate), updateChallenge);
 router.patch('/:id/publish', authenticate, requireRole('dept_admin', 'super_admin'), publishChallenge);
+router.delete('/:id', authenticate, requireRole('dept_admin', 'super_admin'), deleteChallenge);
 
 module.exports = router;
