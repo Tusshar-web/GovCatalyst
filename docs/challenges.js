@@ -265,7 +265,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await GovApi.publishChallenge(id);
                 }
             } catch (e) {
-                console.warn('Backend unavailable, using local data:', e.message);
+                console.error('Backend unavailable or failed:', e.message);
+                c.status = 'Draft'; // Revert optimistic update
+                GovUtils.showToast('Failed to publish challenge.', 'error');
+                return;
             }
 
             GovData.auditTrail.unshift({

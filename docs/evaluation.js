@@ -201,7 +201,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await GovApi.submitEvaluationScores({ assignmentId, scores: scoresForApi });
             }
         } catch (err) {
-            console.warn('Backend submit failed, using local data:', err.message);
+            console.error('Backend submit failed:', err.message);
+            GovUtils.showToast('Failed to submit scores. Please try again.', 'error');
+            return; // Abort local update if backend fails
         }
 
         // Remove previous if exists from same evaluator for same pair
