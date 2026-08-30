@@ -88,55 +88,34 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRunMatch.disabled = true;
 
         try {
-            // Compute match scores based on sector similarity, category overlap, and tech tags
-            const challengeWords = (challenge.title + ' ' + challenge.description + ' ' + challenge.category)
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, ' ')
-                .split(' ')
-                .filter(w => w.length > 2);
+            let scoredStartups = [];
 
-            const scoredStartups = await Promise.all(GovData.startups.map(async (su) => {
-                let score = 30; // base score
-                
-                // Sector match
-                const suSector = su.sector || '';
-                const chCategory = challenge.category || challenge.sector || '';
-                if (suSector && chCategory && suSector.toLowerCase() === chCategory.toLowerCase()) score += 35;
-                else if ((suSector === 'AI/ML' && chCategory === 'Software') || (suSector === 'IoT' && chCategory === 'Hardware')) score += 20;
-
-                // Tag overlap
-                const matchTags = su.matchTags || su.tech_tags || [];
-                const tagOverlap = matchTags.filter(t => typeof t === 'string' && challengeWords.some(cw => cw.includes(t.toLowerCase()) || t.toLowerCase().includes(cw))).length;
-                score += tagOverlap * 12;
-
-                // Past pilots boost
-                score += Math.min(su.pastPilots * 4, 15);
-
-                // DPIIT verified bonus
-                if (su.dpiitNumber) score += 5;
-
-                // GeM boost
-                if (su.gemRegistered) score += 5;
-
-                score = Math.min(Math.max(score, 25), 98); // Clamp between 25% and 98%
-
-                let feedback = '';
+            if (window.GovApi) {
                 try {
-                    if (window.GovApi) {
-                        const res = await GovApi.applyToChallenge(challenge.id, { proposal_summary: su.description });
-                        if (res.success) {
-                            if (res.score) score = res.score;
-                            if (res.evaluation && res.evaluation.feedback) {
-                                feedback = res.evaluation.feedback;
-                            }
-                        }
+                    const res = await GovApi.getAiStartupMatches(challenge.id);
+                    if (res.success && res.matches) {
+                        scoredStartups = res.matches.map(match => {
+                            const su = GovData.startups.find(s => s.id === match.startup_id) || GovData.startups[0];
+                            return {
+                                startup: su,
+                                matchScore: match.score,
+                                feedback: match.feedback
+                            };
+                        }).filter(item => item.startup);
                     }
                 } catch (e) {
-                    console.warn('Backend unavailable, using local data:', e.message);
+                    console.error('Failed to get AI matches:', e.message);
                 }
+            }
 
-                return { startup: su, matchScore: score, feedback };
-            }));
+            // Fallback if API fails or is unavailable
+            if (scoredStartups.length === 0) {
+                scoredStartups = GovData.startups.map(su => ({
+                    startup: su,
+                    matchScore: Math.floor(Math.random() * 40) + 40,
+                    feedback: 'AI matching unavailable; using fallback score.'
+                }));
+            }
 
             scoredStartups.sort((a, b) => b.matchScore - a.matchScore);
 

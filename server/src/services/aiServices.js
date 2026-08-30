@@ -135,5 +135,60 @@ Respond ONLY with valid JSON in this exact structure without markdown or backtic
     };
   }
 }
+}
 
-module.exports = { processChallengeInput, scoreProposalWithAI };
+/**
+ * Batch scores multiple startups against a single challenge statement.
+ * Returns an array of objects: [{ startup_id, score, feedback }]
+ */
+async function batchScoreStartups(challenge, startups) {
+  const startupsData = startups.map(su => ({
+    id: su.id,
+    company_name: su.company_name,
+    sector: su.sector,
+    tech_tags: su.tech_tags || [],
+    pitch_summary: su.pitch_summary || '',
+  }));
+
+  const prompt = `You are a government innovation evaluator. Evaluate how well these startups fit the following challenge.
+
+GOVERNMENT CHALLENGE:
+Title: ${challenge.title}
+Outcome Statement: ${challenge.outcome_statement || challenge.raw_problem_input}
+Sector: ${challenge.sector || 'General'}
+Tech Tags: ${(challenge.tech_tags || []).join(', ')}
+
+STARTUPS TO EVALUATE:
+${JSON.stringify(startupsData, null, 2)}
+
+For each startup, provide a score from 0 to 100 based on their fit, and a short 1-sentence feedback.
+Respond ONLY with a valid JSON array in this exact structure, no markdown:
+[
+  {
+    "startup_id": "uuid-here",
+    "score": 85,
+    "feedback": "Strong fit due to their expertise in AI."
+  }
+]`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt,
+    });
+
+    const rawText = response.text?.trim() || '';
+    const cleaned = rawText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    return [];
+  } catch (err) {
+    console.error('Gemini batch scoring error:', err.message || err);
+    return [];
+  }
+}
+
+module.exports = { processChallengeInput, scoreProposalWithAI, batchScoreStartups };
