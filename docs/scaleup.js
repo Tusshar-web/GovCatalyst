@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function populatePilots() {
         if (!selPilot) return;
-        let pilots = GovData.pilots;
+        let pilots = GovData.pilots || [];
         try {
             if (window.GovApi) {
                 const res = await GovApi.getPilots();
@@ -76,15 +76,33 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.warn('Backend unavailable, using local data:', e.message);
         }
-        selPilot.innerHTML = pilots.map(p => `
-            <option value="${p.dbId || p.id}">[${p.id || p.dbId}] ${p.name} (${p.status})</option>
-        `).join('');
+        if (pilots.length === 0) {
+            selPilot.innerHTML = '<option value="">-- No Sandbox Pilots Found --</option>';
+        } else {
+            selPilot.innerHTML = pilots.map(p => `
+                <option value="${p.dbId || p.id}">[${p.id || p.dbId}] ${p.name} (${p.status})</option>
+            `).join('');
+        }
     }
 
     async function renderScaleup(pilotId) {
         let pilots = GovData.pilots || [];
+        if (!pilotId || pilots.length === 0) {
+            if (valSuccessScore) valSuccessScore.textContent = '—';
+            if (valDecisionBadge) {
+                valDecisionBadge.className = 'badge bg-secondary';
+                valDecisionBadge.textContent = 'PENDING';
+            }
+            if (valDecisionTitle) valDecisionTitle.textContent = 'No Sandbox Pilot Selected';
+            if (valDecisionReason) valDecisionReason.textContent = 'Please select an active sandbox pilot to evaluate scale-up procurement readiness.';
+            if (valPathwayBadge) valPathwayBadge.textContent = '—';
+            if (comparisonTbody) comparisonTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No pilot performance metrics found.</td></tr>';
+            if (gemDraftContainer) gemDraftContainer.innerHTML = '<div class="text-muted small p-2">Select a pilot to preview GeM procurement draft specifications.</div>';
+            if (transitionStepsContainer) transitionStepsContainer.innerHTML = '<div class="text-muted small p-2">Select a pilot to generate scale-up pathway milestones.</div>';
+            return;
+        }
         let p = pilots.find(item => item.id === pilotId || item.dbId === pilotId) || pilots[0];
-        
+
         try {
             if (window.GovApi) {
                 const res = await GovApi.getPilotById(pilotId);
@@ -260,6 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
             await renderScaleup(initialId);
         }
     }
-    
+
     init();
 });

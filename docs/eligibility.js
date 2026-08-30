@@ -36,6 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Populate Startup Selector
     function populateStartupSelector() {
+        if (!GovData.startups || GovData.startups.length === 0) {
+            selScreeningSu.innerHTML = '<option value="">-- No Startups Registered --</option>';
+            if (screeningSuSummary) screeningSuSummary.innerHTML = '<div class="text-muted small p-2">No startup entity currently selected.</div>';
+            if (checklistTbody) checklistTbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No startup selected for eligibility verification.</td></tr>';
+            return;
+        }
         selScreeningSu.innerHTML = GovData.startups.map(su => `
             <option value="${su.id}">[${su.id}] ${su.name} (${su.sector})</option>
         `).join('');
@@ -128,6 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render Batch Screening Table
     function renderBatchTable() {
+        if (!GovData.startups || GovData.startups.length === 0) {
+            batchTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No startup screening records found.</td></tr>';
+            return;
+        }
         batchTbody.innerHTML = GovData.startups.map(su => {
             const screening = GovData.startupScreenings.find(s => s.startupId === su.id);
             const status = screening ? screening.overallStatus : (su.dpiitNumber ? 'ELIGIBLE' : 'NOT ELIGIBLE');

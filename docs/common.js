@@ -102,24 +102,15 @@ window.GovLang = {
 
 
 // ============================================
-// SECTION 2: MOCK DATA FOR ALL 10 MODULES
+// ============================================
+// SECTION 2: PLATFORM DATA STORE
 // ============================================
 var GovData = window.GovData = {
-    // Top-level alias
-
-
     // --- MODULE 1: AUTH & REGISTRATION WORKFLOW ---
-    // Live data fetched from PostgreSQL via GovApi.getPendingUsers()
     pendingRegistrations: [],
 
-
     // --- MODULE 1: CHALLENGES ---
-    challenges: [
-        { id: 'CH-001', title: 'AI-Powered Highway Infrastructure Inspection', department: 'Public Works Department (PWD)', description: 'Manual visual inspection of concrete bridges and highway overpasses is slow, hazardous, and takes an average of 10 hours per bridge deck with subjective error rates.', outcomeStatement: 'Reduce bridge inspection time by at least 40% (from 10 hrs to 6 hrs or less) while maintaining defect detection accuracy above 90%, measured over 100 inspection cases across 3 bridge sites within 8 weeks.', category: 'AI/ML', status: 'Matched', createdDate: '2026-04-15', templateUsed: 'T3' },
-        { id: 'CH-002', title: 'Smart Water Leakage Detection System', department: 'Water Supply & Sanitation Dept', description: 'Urban water supply networks experience 30-40% water loss due to undetected pipeline leakages. Current detection methods rely on citizen complaints and are reactive.', outcomeStatement: 'Achieve leak detection rate of 85% or above with response time under 4 hours, deployed across Pune Municipal Corporation pilot zone within 12 weeks.', category: 'IoT', status: 'Published', createdDate: '2026-05-20', templateUsed: 'T1' },
-        { id: 'CH-003', title: 'Digital Land Record Verification Portal', department: 'Revenue & Forest Department', description: 'Land record verification takes 15-20 days involving multiple office visits. Citizens face difficulty in verifying property ownership and encumbrance status.', outcomeStatement: 'Enable online land record verification within 48 hours with 95% data accuracy, reducing citizen visits from 4 to 0 for standard verification requests.', category: 'Software', status: 'Draft', createdDate: '2026-06-10', templateUsed: 'T1' },
-        { id: 'CH-004', title: 'AI Chatbot for Citizen Grievance Redressal', department: 'General Administration Department', description: 'The CM Helpline receives 50,000+ calls daily. Average resolution time is 7 days. Many queries are repetitive and can be auto-resolved.', outcomeStatement: 'Auto-resolve 60% of routine citizen queries within 2 minutes using AI chatbot, reducing call center load by 40% and improving citizen satisfaction score from 3.2 to 4.0 (out of 5).', category: 'AI/ML', status: 'Published', createdDate: '2026-07-01', templateUsed: 'T4' }
-    ],
+    challenges: [],
 
     challengeTemplates: [
         { id: 'T1', name: 'Digital Service Delivery', template: 'The department seeks a solution that can [DESCRIBE OUTCOME] within [TIMEFRAME], measured by [KPI METRIC], improving from a baseline of [BASELINE VALUE] to a target of [TARGET VALUE], serving [TARGET USERS] across [DEPLOYMENT SCOPE].' },
@@ -129,16 +120,9 @@ var GovData = window.GovData = {
     ],
 
     // --- MODULE 2: STARTUPS ---
-    startups: [
-        { id: 'SU-001', name: 'InspectAI Technologies Pvt Ltd', sector: 'AI/ML', stage: 'Growth', techStack: ['Python', 'TensorFlow', 'OpenCV', 'Drone SDK', 'React'], pastPilots: 3, dpiitNumber: 'DIPP-2023-MH-45821', gemRegistered: true, founders: 'Dr. Vikram Sen, Anita Kulkarni', city: 'Pune', description: 'AI-powered infrastructure inspection using drone-based computer vision for defect detection in bridges, highways, and buildings.', matchTags: ['ai', 'ml', 'infrastructure', 'inspection', 'drones', 'computer-vision'], turnover: 5200000, teamSize: 18, founded: '2022' },
-        { id: 'SU-002', name: 'AquaSense IoT Solutions', sector: 'IoT', stage: 'Early', techStack: ['Arduino', 'LoRaWAN', 'Node.js', 'MongoDB', 'React Native'], pastPilots: 1, dpiitNumber: 'DIPP-2024-MH-61234', gemRegistered: false, founders: 'Rohan Deshmukh, Meera Joshi', city: 'Nagpur', description: 'IoT-based smart water monitoring and leakage detection system using acoustic sensors and ML algorithms for municipal water networks.', matchTags: ['iot', 'water', 'smart-city', 'sensors', 'monitoring'], turnover: 1800000, teamSize: 10, founded: '2023' },
-        { id: 'SU-003', name: 'LandChain Digital Pvt Ltd', sector: 'Blockchain', stage: 'Seed', techStack: ['Solidity', 'Hyperledger', 'React', 'PostgreSQL', 'Go'], pastPilots: 0, dpiitNumber: 'DIPP-2024-MH-72456', gemRegistered: false, founders: 'Aditya Patil', city: 'Mumbai', description: 'Blockchain-based land record management and verification platform ensuring tamper-proof property documentation.', matchTags: ['blockchain', 'land-records', 'verification', 'digital', 'governance'], turnover: 800000, teamSize: 6, founded: '2024' },
-        { id: 'SU-004', name: 'NagriBot AI Pvt Ltd', sector: 'AI/ML', stage: 'Early', techStack: ['Python', 'GPT API', 'FastAPI', 'React', 'Redis'], pastPilots: 2, dpiitNumber: 'DIPP-2023-MH-51890', gemRegistered: true, founders: 'Prashant Shirke, Sneha Wagh', city: 'Pune', description: 'Multilingual AI chatbot platform for government citizen services with Marathi, Hindi, and English support.', matchTags: ['ai', 'chatbot', 'citizen', 'nlp', 'multilingual', 'grievance'], turnover: 3500000, teamSize: 12, founded: '2023' },
-        { id: 'SU-005', name: 'GreenGrid CleanTech', sector: 'CleanTech', stage: 'Growth', techStack: ['Python', 'IoT Sensors', 'AWS', 'Angular', 'PostgreSQL'], pastPilots: 4, dpiitNumber: 'DIPP-2022-MH-38901', gemRegistered: true, founders: 'Dr. Sanjay More, Kavita Raut', city: 'Nashik', description: 'Solar microgrid and energy management solutions for rural government buildings and panchayat offices.', matchTags: ['cleantech', 'solar', 'energy', 'rural', 'green'], turnover: 12000000, teamSize: 25, founded: '2021' },
-        { id: 'SU-006', name: 'EduSpark Technologies', sector: 'EdTech', stage: 'Scale', techStack: ['Flutter', 'Django', 'PostgreSQL', 'ML Models', 'AWS'], pastPilots: 5, dpiitNumber: 'DIPP-2021-MH-22345', gemRegistered: true, founders: 'Amita Bhosale, Rajiv Kadam', city: 'Aurangabad', description: 'Adaptive learning platform for government schools with personalized content delivery in Marathi medium.', matchTags: ['edtech', 'education', 'schools', 'adaptive-learning', 'marathi'], turnover: 20000000, teamSize: 35, founded: '2020' }
-    ],
+    startups: [],
 
-    // --- MODULE 3: ELIGIBILITY ---
+    // --- MODULE 3: ELIGIBILITY CRITERIA (STATUTORY RULES) ---
     eligibilityCriteria: [
         { id: 'EC-1', name: 'Annual Turnover', standardThreshold: '₹10 Crore minimum', relaxedThreshold: '₹25 Lakh minimum (Startup India)', description: 'Minimum annual turnover requirement for vendor qualification', exemptionApplicable: true },
         { id: 'EC-2', name: 'Years of Operation', standardThreshold: '5+ years', relaxedThreshold: '1+ year with working prototype', description: 'Minimum years of business operation', exemptionApplicable: true },
@@ -147,57 +131,10 @@ var GovData = window.GovData = {
         { id: 'EC-5', name: 'Team Credentials', standardThreshold: 'Certified professionals required', relaxedThreshold: 'Technical co-founder with domain expertise', description: 'Key team qualifications and experience', exemptionApplicable: true },
         { id: 'EC-6', name: 'Past Government Projects', standardThreshold: '3+ govt contracts completed', relaxedThreshold: '1 pilot or industry reference letter', description: 'Prior experience with government/enterprise clients', exemptionApplicable: true }
     ],
-
-    startupScreenings: [
-        {
-            startupId: 'SU-001', results: [
-                { criterionId: 'EC-1', met: true, value: '₹52 Lakh', notes: 'Meets relaxed criteria' },
-                { criterionId: 'EC-2', met: true, value: '4 years', notes: 'Operating since 2022' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2023-MH-45821', notes: 'Valid DPIIT certificate' },
-                { criterionId: 'EC-4', met: true, value: 'Production Ready', notes: 'Deployed with 3 clients' },
-                { criterionId: 'EC-5', met: true, value: 'PhD in CV, 18-member team', notes: 'CTO holds AI/ML doctorate' },
-                { criterionId: 'EC-6', met: true, value: '3 govt pilots completed', notes: 'NHAI, MSRDC, BMC' }
-            ], overallStatus: 'ELIGIBLE'
-        },
-        {
-            startupId: 'SU-002', results: [
-                { criterionId: 'EC-1', met: true, value: '₹18 Lakh', notes: 'Below standard, meets relaxed' },
-                { criterionId: 'EC-2', met: true, value: '3 years', notes: 'Operating since 2023' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2024-MH-61234', notes: 'Valid DPIIT certificate' },
-                { criterionId: 'EC-4', met: true, value: 'MVP Deployed', notes: 'Pilot running in Nagpur' },
-                { criterionId: 'EC-5', met: true, value: 'IoT engineer founders', notes: 'IIT Bombay alumni' },
-                { criterionId: 'EC-6', met: false, value: '1 pilot (ongoing)', notes: 'No completed govt project' }
-            ], overallStatus: 'ELIGIBLE'
-        },
-        {
-            startupId: 'SU-003', results: [
-                { criterionId: 'EC-1', met: false, value: '₹8 Lakh', notes: 'Below relaxed threshold' },
-                { criterionId: 'EC-2', met: true, value: '2 years', notes: 'Operating since 2024' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2024-MH-72456', notes: 'Valid certificate' },
-                { criterionId: 'EC-4', met: true, value: 'Prototype', notes: 'Working demo available' },
-                { criterionId: 'EC-5', met: false, value: 'Solo founder', notes: 'No dedicated CTO' },
-                { criterionId: 'EC-6', met: false, value: 'None', notes: 'No prior govt experience' }
-            ], overallStatus: 'NOT ELIGIBLE'
-        },
-        {
-            startupId: 'SU-004', results: [
-                { criterionId: 'EC-1', met: true, value: '₹35 Lakh', notes: 'Meets relaxed criteria' },
-                { criterionId: 'EC-2', met: true, value: '3 years', notes: 'Operating since 2023' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2023-MH-51890', notes: 'Valid certificate' },
-                { criterionId: 'EC-4', met: true, value: 'Production', notes: 'Live chatbot with 2 clients' },
-                { criterionId: 'EC-5', met: true, value: 'NLP specialists, 12 team', notes: 'Strong AI team' },
-                { criterionId: 'EC-6', met: true, value: '2 govt pilots', notes: 'PMC, Collector Office' }
-            ], overallStatus: 'ELIGIBLE'
-        }
-    ],
+    startupScreenings: [],
 
     // --- MODULE 4: EVALUATION ---
-    evaluators: [
-        { id: 'EV-001', name: 'Dr. Priya Sharma', expertise: 'AI/ML & Computer Vision', department: 'IT Department', coiDeclared: false, coiDetails: '' },
-        { id: 'EV-002', name: 'Shri Amit Patel', expertise: 'Infrastructure & Civil Engineering', department: 'PWD', coiDeclared: true, coiDetails: 'Advisory board member of SU-005 (GreenGrid)' },
-        { id: 'EV-003', name: 'Dr. Sunita Rao', expertise: 'Policy & Public Administration', department: 'GAD', coiDeclared: false, coiDetails: '' }
-    ],
-
+    evaluators: [],
     evaluationRubric: [
         { category: 'Technical Feasibility', weight: 25, maxScore: 10, description: 'Technical and operational feasibility within government infrastructure constraints' },
         { category: 'Innovation & Novelty', weight: 20, maxScore: 10, description: 'Novelty of approach, technology differentiation, and creative problem solving' },
@@ -205,34 +142,13 @@ var GovData = window.GovData = {
         { category: 'Cost Effectiveness', weight: 15, maxScore: 10, description: 'Value for money, total cost of ownership, and budget efficiency' },
         { category: 'Scalability & Replication', weight: 15, maxScore: 10, description: 'Ability to scale across multiple departments, 36 districts, and state agencies' }
     ],
-
-    evaluationScores: [
-        { startupId: 'SU-001', challengeId: 'CH-001', evaluatorId: 'EV-001', scores: { innovation: 9, feasibility: 8, scalability: 7, cost: 8 }, comments: 'Excellent AI model accuracy. Strong drone integration. Good cost-value ratio.' },
-        { startupId: 'SU-001', challengeId: 'CH-001', evaluatorId: 'EV-003', scores: { innovation: 8, feasibility: 9, scalability: 8, cost: 7 }, comments: 'Well-aligned with government infrastructure needs. Scalable approach.' },
-        { startupId: 'SU-004', challengeId: 'CH-004', evaluatorId: 'EV-001', scores: { innovation: 8, feasibility: 9, scalability: 9, cost: 8 }, comments: 'Strong NLP capabilities. Marathi language support is critical differentiator.' },
-        { startupId: 'SU-004', challengeId: 'CH-004', evaluatorId: 'EV-003', scores: { innovation: 7, feasibility: 8, scalability: 8, cost: 9 }, comments: 'Very cost-effective. Good citizen engagement potential.' },
-        { startupId: 'SU-002', challengeId: 'CH-002', evaluatorId: 'EV-001', scores: { innovation: 7, feasibility: 7, scalability: 6, cost: 8 }, comments: 'Good IoT approach but scalability needs improvement.' },
-        { startupId: 'SU-002', challengeId: 'CH-002', evaluatorId: 'EV-002', scores: { innovation: 6, feasibility: 8, scalability: 7, cost: 7 }, comments: 'Feasible for municipal deployment. Need larger sensor network for scale.' }
-    ],
+    evaluationScores: [],
 
     // --- MODULE 5: PILOTS ---
-    pilots: [
-        { id: 'PLT-001', challengeId: 'CH-001', startupId: 'SU-001', name: 'AI Highway Inspection Pilot', duration: '8 weeks', startDate: '2026-06-01', endDate: '2026-07-27', location: 'NH-48 Corridor, Maharashtra (Sector 12, 18, 24 Bridges)', riskLevel: 'Medium', status: 'Completed', kpiTargets: [{ name: 'Inspection Time Reduction', baseline: '10 hrs', target: '6 hrs' }, { name: 'Defect Detection Accuracy', baseline: '82%', target: '90%' }, { name: 'User Satisfaction', baseline: '6/10', target: '8/10' }], dataScope: ['Bridge inspection images', 'GIS asset data', 'Structural assessment reports'], safeguards: ['Dedicated sandbox environment', 'No production data access', 'Weekly security audits', 'Manual verification of AI outputs'], successThresholds: 'All KPIs met with no critical security incidents' },
-        { id: 'PLT-002', challengeId: 'CH-002', startupId: 'SU-002', name: 'Smart Water Monitoring Pilot', duration: '12 weeks', startDate: '2026-08-01', endDate: '2026-10-24', location: 'Pune Municipal Corporation — Zone 3', riskLevel: 'Low', status: 'Active', kpiTargets: [{ name: 'Leak Detection Rate', baseline: '40%', target: '85%' }, { name: 'Response Time', baseline: '48 hrs', target: '4 hrs' }], dataScope: ['Water flow sensor data', 'Pipeline network maps'], safeguards: ['IoT device isolation', 'Encrypted data transmission', 'Weekly reviews'], successThresholds: 'Leak detection rate above 75%' }
-    ],
+    pilots: [],
 
     // --- MODULE 6: MILESTONES ---
-    milestones: [
-        { id: 'MS-001', pilotId: 'PLT-001', name: 'Setup & Agreement', description: 'Complete pilot agreement, configure sandbox, train inspection team', status: 'Completed', dueDate: '2026-06-14', completedDate: '2026-06-12', paymentLinked: true, paymentAmount: 100000 },
-        { id: 'MS-002', pilotId: 'PLT-001', name: 'Deployment & Integration', description: 'Deploy AI system, connect GIS APIs, run end-to-end sandbox tests', status: 'Completed', dueDate: '2026-06-28', completedDate: '2026-06-25', paymentLinked: true, paymentAmount: 150000 },
-        { id: 'MS-003', pilotId: 'PLT-001', name: 'Active Pilot Execution', description: 'Run 100 bridge inspections, collect KPI data, bi-weekly reviews', status: 'Completed', dueDate: '2026-07-19', completedDate: '2026-07-18', paymentLinked: true, paymentAmount: 150000 },
-        { id: 'MS-004', pilotId: 'PLT-001', name: 'Final Evaluation & Report', description: 'Complete evaluation, generate final report, committee review', status: 'Completed', dueDate: '2026-07-27', completedDate: '2026-07-26', paymentLinked: true, paymentAmount: 100000 },
-        { id: 'MS-005', pilotId: 'PLT-002', name: 'Sensor Network Deployment', description: 'Install 50 IoT sensors across Zone 3 pipeline network', status: 'Completed', dueDate: '2026-08-15', completedDate: '2026-08-14', paymentLinked: true, paymentAmount: 200000 },
-        { id: 'MS-006', pilotId: 'PLT-002', name: 'Data Collection & Calibration', description: 'Collect baseline data, calibrate leak detection algorithms', status: 'In Progress', dueDate: '2026-09-15', completedDate: null, paymentLinked: true, paymentAmount: 200000 },
-        { id: 'MS-007', pilotId: 'PLT-002', name: 'Performance Assessment', description: 'Full-scale testing and KPI measurement', status: 'Pending', dueDate: '2026-10-10', completedDate: null, paymentLinked: true, paymentAmount: 200000 },
-        { id: 'MS-008', pilotId: 'PLT-002', name: 'Final Report & Decision', description: 'Generate evaluation report and scale-up recommendation', status: 'Pending', dueDate: '2026-10-24', completedDate: null, paymentLinked: true, paymentAmount: 100000 }
-    ],
-
+    milestones: [],
     agreementClauses: [
         { id: 'CL-1', category: 'IP Ownership', text: 'All intellectual property developed during the pilot shall remain with the startup. The Government retains a perpetual, non-exclusive license to use the solution for government purposes.' },
         { id: 'CL-2', category: 'Data Rights', text: 'Government data used during the pilot remains government property. The startup shall not retain, copy, or use government data beyond the pilot scope without written approval.' },
@@ -243,15 +159,9 @@ var GovData = window.GovData = {
     ],
 
     // --- MODULE 7: KPI READINGS ---
-    kpiReadings: [
-        { id: 'KPI-001', pilotId: 'PLT-001', name: 'Inspection Time', unit: 'hours', baseline: 10, target: 6, current: 5.8, minAcceptable: 7, readings: [{ week: 1, value: 9.5 }, { week: 2, value: 8.2 }, { week: 3, value: 7.1 }, { week: 4, value: 6.5 }, { week: 5, value: 6.1 }, { week: 6, value: 5.9 }, { week: 7, value: 5.8 }, { week: 8, value: 5.8 }], direction: 'lower', status: 'Achieved' },
-        { id: 'KPI-002', pilotId: 'PLT-001', name: 'Defect Detection Accuracy', unit: '%', baseline: 82, target: 90, current: 91, minAcceptable: 85, readings: [{ week: 1, value: 83 }, { week: 2, value: 85 }, { week: 3, value: 87 }, { week: 4, value: 88 }, { week: 5, value: 89 }, { week: 6, value: 90 }, { week: 7, value: 91 }, { week: 8, value: 91 }], direction: 'higher', status: 'Achieved' },
-        { id: 'KPI-003', pilotId: 'PLT-001', name: 'User Satisfaction Score', unit: '/10', baseline: 6, target: 8, current: 8.5, minAcceptable: 7, readings: [{ week: 1, value: 6.2 }, { week: 2, value: 6.8 }, { week: 3, value: 7.2 }, { week: 4, value: 7.5 }, { week: 5, value: 7.8 }, { week: 6, value: 8.1 }, { week: 7, value: 8.3 }, { week: 8, value: 8.5 }], direction: 'higher', status: 'Achieved' },
-        { id: 'KPI-004', pilotId: 'PLT-002', name: 'Leak Detection Rate', unit: '%', baseline: 40, target: 85, current: 62, minAcceptable: 60, readings: [{ week: 1, value: 42 }, { week: 2, value: 48 }, { week: 3, value: 55 }, { week: 4, value: 62 }], direction: 'higher', status: 'On Track' },
-        { id: 'KPI-005', pilotId: 'PLT-002', name: 'Response Time', unit: 'hours', baseline: 48, target: 4, current: 12, minAcceptable: 8, readings: [{ week: 1, value: 44 }, { week: 2, value: 32 }, { week: 3, value: 20 }, { week: 4, value: 12 }], direction: 'lower', status: 'On Track' }
-    ],
+    kpiReadings: [],
 
-    // --- MODULE 8: PAYMENTS ---
+    // --- MODULE 8: PAYMENTS (MOCK DATA RETAINED AS PAYMENT BACKEND IS PENDING) ---
     payments: [
         { id: 'PAY-001', milestoneId: 'MS-001', pilotId: 'PLT-001', amount: 100000, status: 'Released', requestDate: '2026-06-13', approvalDate: '2026-06-14', releaseDate: '2026-06-16', escrowHeld: false },
         { id: 'PAY-002', milestoneId: 'MS-002', pilotId: 'PLT-001', amount: 150000, status: 'Released', requestDate: '2026-06-26', approvalDate: '2026-06-27', releaseDate: '2026-06-30', escrowHeld: false },
@@ -264,22 +174,10 @@ var GovData = window.GovData = {
     ],
 
     // --- MODULE 9: SCALE-UP ---
-    scaleupDecisions: [
-        { pilotId: 'PLT-001', successScore: 92, recommendation: 'Scale to Full Procurement', reasoning: 'All 3 KPIs exceeded targets. Inspection time reduced by 42% (target was 40%). Defect accuracy 91% (target 90%). User satisfaction 8.5/10 (target 8). No critical security or safety incidents. Strong user adoption across all 10 engineers.', procurementPathway: 'GFR Rule 194 — Innovation Procurement Framework', gemListingDraft: { itemName: 'AI-Powered Infrastructure Inspection System', category: 'Software — AI/ML Solutions', estimatedValue: '₹2.5 Crore', specifications: 'Drone-based computer vision defect detection for bridge and highway inspection. Includes edge AI processing, GIS integration, and automated reporting.' }, transitionSteps: ['Complete final validator sign-off', 'Prepare GeM listing draft', 'Submit to department procurement committee', 'Issue RFP under GFR Rule 194', 'Contract award and phased deployment across 12 highway divisions'] },
-        { pilotId: 'PLT-002', successScore: null, recommendation: 'Pilot In Progress', reasoning: 'Pilot is currently active (Week 4 of 12). KPIs showing positive trends. Decision pending pilot completion in October 2026.', procurementPathway: null, gemListingDraft: null, transitionSteps: [] }
-    ],
+    scaleupDecisions: [],
 
     // --- MODULE 10: ADMIN & GOVERNANCE ---
-    users: [
-        { id: 'USR-001', name: 'Shri Rajesh Verma', role: 'Dept Admin', email: 'rajesh.verma@maharashtra.gov.in', department: 'PWD', lastLogin: '2026-08-27 09:15', status: 'Active' },
-        { id: 'USR-002', name: 'Dr. Vikram Sen', role: 'Startup', email: 'vikram@inspectai.com', department: 'InspectAI Technologies', lastLogin: '2026-08-26 16:30', status: 'Active' },
-        { id: 'USR-003', name: 'Dr. Priya Sharma', role: 'Evaluator', email: 'priya.sharma@maharashtra.gov.in', department: 'IT Department', lastLogin: '2026-08-25 11:00', status: 'Active' },
-        { id: 'USR-004', name: 'Shri Amit Patel', role: 'Evaluator', email: 'amit.patel@maharashtra.gov.in', department: 'PWD', lastLogin: '2026-08-24 14:20', status: 'Active' },
-        { id: 'USR-005', name: 'Smt. Kavita Deshmukh', role: 'Validator', email: 'kavita.d@maharashtra.gov.in', department: 'Finance Department', lastLogin: '2026-08-27 10:00', status: 'Active' },
-        { id: 'USR-006', name: 'Shri Anil Kumar', role: 'Super Admin', email: 'anil.kumar@maharashtra.gov.in', department: 'MSInS', lastLogin: '2026-08-27 08:45', status: 'Active' }
-    ],
-
-    // Super Admin NOT available in registration — pre-seeded only
+    users: [],
     roleDefinitions: [
         { role: 'Super Admin', permissions: ['All modules', 'User management', 'System configuration', 'Audit access', 'Role assignment'], description: 'Full system access — pre-configured, not available in registration', registerable: false },
         { role: 'Dept Admin', permissions: ['Challenge creation', 'Pilot management', 'Payment approval', 'Reports', 'User viewing'], description: 'Department-level administration and pilot oversight', registerable: true },
@@ -287,28 +185,8 @@ var GovData = window.GovData = {
         { role: 'Startup', permissions: ['Profile management', 'Challenge application', 'Milestone submission', 'Evidence upload', 'Payment tracking'], description: 'Startup participant with self-service access', registerable: true },
         { role: 'Validator', permissions: ['Audit trail review', 'Sign-off workflow', 'Compliance verification', 'Financial audit'], description: 'Independent validation and audit oversight', registerable: true }
     ],
-
-    auditTrail: [
-        { id: 1, timestamp: '2026-08-27 09:15:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Login', module: 'System', detail: 'User logged in from IP 192.168.1.100' },
-        { id: 2, timestamp: '2026-08-27 09:20:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Dashboard View', module: 'Dashboard', detail: 'Accessed main monitoring dashboard' },
-        { id: 3, timestamp: '2026-08-26 16:30:00', user: 'Dr. Vikram Sen', role: 'Startup', action: 'Evidence Upload', module: 'Milestones', detail: 'Uploaded sensor calibration report for MS-006' },
-        { id: 4, timestamp: '2026-08-26 14:00:00', user: 'Dr. Priya Sharma', role: 'Evaluator', action: 'Score Submission', module: 'Evaluation', detail: 'Submitted evaluation scores for SU-001 against CH-001' },
-        { id: 5, timestamp: '2026-08-25 11:30:00', user: 'Smt. Kavita Deshmukh', role: 'Validator', action: 'Sign-off Approved', module: 'Audit', detail: 'Validated and signed off on PLT-001 final evaluation report' },
-        { id: 6, timestamp: '2026-08-25 10:00:00', user: 'Shri Anil Kumar', role: 'Super Admin', action: 'User Created', module: 'Admin', detail: 'Created evaluator account for Dr. Sunita Rao (EV-003)' },
-        { id: 7, timestamp: '2026-08-24 15:00:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Payment Approved', module: 'Payments', detail: 'Approved milestone payment PAY-005 of ₹2,00,000 for MS-005' },
-        { id: 8, timestamp: '2026-08-24 09:00:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Challenge Published', module: 'Challenges', detail: 'Published challenge CH-002: Smart Water Leakage Detection System' },
-        { id: 9, timestamp: '2026-08-23 14:00:00', user: 'Dr. Vikram Sen', role: 'Startup', action: 'Profile Updated', module: 'Startups', detail: 'Updated company profile and added NHAI pilot reference' },
-        { id: 10, timestamp: '2026-08-22 11:00:00', user: 'Smt. Kavita Deshmukh', role: 'Validator', action: 'Compliance Check', module: 'Eligibility', detail: 'Verified eligibility screening results for SU-001' },
-        { id: 11, timestamp: '2026-08-20 16:00:00', user: 'Shri Anil Kumar', role: 'Super Admin', action: 'Config Change', module: 'Admin', detail: 'Updated eligibility relaxation criteria for Startup India exemptions' },
-        { id: 12, timestamp: '2026-08-19 10:30:00', user: 'Dr. Priya Sharma', role: 'Evaluator', action: 'COI Declaration', module: 'Evaluation', detail: 'Declared no conflict of interest for CH-001 evaluation panel' }
-    ],
-
-    validatorSignoffs: [
-        { id: 'VS-001', pilotId: 'PLT-001', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Final Evaluation', status: 'Signed Off', signoffDate: '2026-08-25 11:30', comments: 'All processes followed per GFR Rule 194. Documentation complete. Recommend scale-up.' },
-        { id: 'VS-002', pilotId: 'PLT-001', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Financial Audit', status: 'Signed Off', signoffDate: '2026-08-25 12:00', comments: 'All 4 payments verified against milestone completion. Budget ₹5L of ₹5L utilized within approved limits.' },
-        { id: 'VS-003', pilotId: 'PLT-002', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Eligibility Verification', status: 'Signed Off', signoffDate: '2026-08-22 11:00', comments: 'AquaSense IoT eligibility verified under Startup India relaxed criteria.' },
-        { id: 'VS-004', pilotId: 'PLT-002', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Milestone MS-006 Review', status: 'Pending', signoffDate: null, comments: '' }
-    ],
+    auditTrail: [],
+    validatorSignoffs: [],
 
     currentRole: 'dept_admin'
 };
