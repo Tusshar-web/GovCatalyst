@@ -61,6 +61,15 @@ const Pilot = {
     return rows;
   },
 
+  /** Fetch pilots belonging to a specific startup (case-insensitive name match) */
+  async findByStartupName(companyName) {
+    const { rows } = await pool.query(
+      'SELECT * FROM gov_pilots WHERE LOWER(startup) = LOWER($1) ORDER BY created_at DESC',
+      [companyName]
+    );
+    return rows;
+  },
+
   /** Fetch one pilot by UUID */
   async findById(id) {
     const { rows } = await pool.query(

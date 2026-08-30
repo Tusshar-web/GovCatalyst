@@ -35,6 +35,21 @@ async function resolvePilot(idOrCode) {
 // ─────────────────────────────────────────────────────────────────
 async function getAllPilots(req, res) {
   try {
+    const userRole = req.user?.role?.toLowerCase?.();
+
+    // Startups should only see pilots they are assigned to
+    if (userRole === 'startup') {
+      const Startup = require('../models/startupModel');
+      const startupProfile = await Startup.findByUserId(req.user.user_id);
+      if (!startupProfile || !startupProfile.company_name) {
+        // No profile yet — return empty list instead of all pilots
+        return formatSuccess(res, [], 'No pilots found for this startup');
+      }
+      const pilots = await Pilot.findByStartupName(startupProfile.company_name);
+      return formatSuccess(res, pilots, 'Pilots retrieved successfully');
+    }
+
+    // Admins / validators / evaluators see all pilots
     const pilots = await Pilot.findAll();
     return formatSuccess(res, pilots, 'Pilots retrieved successfully');
   } catch (err) {
