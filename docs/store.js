@@ -3,7 +3,10 @@ var GovData = window.GovData = {
     pendingRegistrations: [],
 
     // --- MODULE 1: CHALLENGES ---
-    challenges: [],
+    challenges: [
+        { id: 'CH-2026-001', title: 'AI for Traffic Management', department: 'IT Department', status: 'Published' },
+        { id: 'CH-2026-002', title: 'Digital Citizen Services', department: 'Public Works', status: 'Published' }
+    ],
 
     challengeTemplates: [
         { id: 'T1', name: 'Digital Service Delivery', template: 'The department seeks a solution that can [DESCRIBE OUTCOME] within [TIMEFRAME], measured by [KPI METRIC], improving from a baseline of [BASELINE VALUE] to a target of [TARGET VALUE], serving [TARGET USERS] across [DEPLOYMENT SCOPE].' },
