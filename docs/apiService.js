@@ -219,6 +219,21 @@ window.GovApi = {
         return this.request(`/api/pilots/${pilotId}/alerts`);
     },
 
+    // --- EVALUATION ENDPOINTS ---
+    async submitEvaluationScores(scoreData) {
+        return this.request('/api/evaluations/scores/submit', {
+            method: 'POST',
+            body: JSON.stringify(scoreData)
+        });
+    },
+
+    async finalizePanelDecision(applicationId, summary) {
+        return this.request(`/api/evaluations/panel/${applicationId}/finalize`, {
+            method: 'POST',
+            body: JSON.stringify({ panelSummary: summary })
+        });
+    },
+
     async getEvaluationReport(pilotId) {
         return this.request(`/api/pilots/${pilotId}/evaluation-report`);
     },

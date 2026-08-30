@@ -209,13 +209,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     comments: newScore.comments,
                     justification: ''
                 }));
-                await GovApi.submitEvaluationScores({ 
+                const submitRes = await GovApi.submitEvaluationScores({ 
                     assignmentId, 
                     scores: scoresForApi,
                     challengeId: chId,
                     startupId: suId,
                     evaluatorId: evId
                 });
+
+                // Automatically finalize panel so the "APPROVE" decision gets created (for prototype ease of use)
+                if (submitRes && submitRes.scores && submitRes.scores[0]) {
+                    const appId = submitRes.scores[0].application_id;
+                    await GovApi.finalizePanelDecision(appId, newScore.comments);
+                }
             }
         } catch (err) {
             console.error('Backend submit failed:', err.message);
@@ -248,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateLiveScore();
         toggleScoring(false);
         renderRankingTable();
-        GovUtils.showToast('Expert scorecard successfully recorded and leaderboard updated!', 'success');
+        GovUtils.showToast('Expert scorecard recorded and panel decision finalized!', 'success');
     });
 
     // Render Ranking Table
@@ -315,14 +321,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         rankingTbody.innerHTML = list.map((item, idx) => {
-            const rank = idx + 1;
-            const rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : (rank === 3 ? 'rank-3' : 'rank-other'));
             const su = GovData.startups.find(s => s.id === item.startupId) || { name: item.startupId, sector: '' };
             const ch = GovData.challenges.find(c => c.id === item.challengeId) || { title: item.challengeId };
 
+            const verdict = item.weightedScore >= 75 ? 'APPROVE' : 'REJECT';
+            const verdictClass = item.weightedScore >= 75 ? 'bg-success' : 'bg-danger';
+
             return `
                 <tr>
-                    <td class="text-center"><span class="rank-badge ${rankClass}">${rank}</span></td>
                     <td>
                         <span class="fw-bold text-navy">${su.name}</span>
                         <small class="text-muted d-block">${su.sector}</small>
@@ -331,23 +337,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="small fw-semibold text-dark">${ch.title}</span>
                         <small class="text-muted font-monospace d-block">${item.challengeId}</small>
                     </td>
-                    <td class="text-center fw-medium">${item.avgInno}/10</td>
-                    <td class="text-center fw-medium">${item.avgFeas}/10</td>
-                    <td class="text-center fw-medium">${item.avgScal}/10</td>
-                    <td class="text-center fw-medium">${item.avgCost}/10</td>
+                    <td><small class="text-muted">${item.evaluators.join(', ')}</small></td>
                     <td class="text-center">
-                        <span class="badge ${item.weightedScore >= 80 ? 'bg-success' : 'bg-primary'} p-2 font-monospace" style="font-size: 13px;">
+                        <span class="badge ${verdictClass} p-2 font-monospace" style="font-size: 13px;">
                             ${item.weightedScore} / 100
                         </span>
                     </td>
-                    <td><small class="text-muted">${item.evaluators.join(', ')}</small></td>
-                    <td class="text-end">
+                    <td class="text-center">
+                        <span class="badge bg-light text-success"><i class="bi bi-shield-check"></i> Clear</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge ${verdictClass} fs-6">${verdict}</span>
+                    </td>
+                    <td class="text-center">
+                        ${verdict === 'APPROVE' ? `
                         <a href="pilot-design.html?startupId=${item.startupId}&challengeId=${item.challengeId}" class="btn btn-sm btn-gov">
                             <i class="bi bi-flask me-1"></i> Structure Pilot
-                        </a>
+                        </a>` : `<button class="btn btn-sm btn-secondary" disabled>Rejected</button>`}
                     </td>
                 </tr>
             `;
+
         }).join('');
     }
 
