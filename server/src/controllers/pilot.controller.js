@@ -88,6 +88,19 @@ async function createPilot(req, res) {
     const user      = req.user?.name || req.user?.email || 'Authorized Officer';
     const userId    = req.user?.user_id || req.user?.id || null;
 
+    // Strict Link Safeguard: Ensure startup has an approved evaluation for this challenge
+    const Application = require('../models/applicationModel');
+    const challengeId = data.problemStatement || data.problemStatementText;
+    const startupId = data.startup;
+    
+    if (challengeId && startupId) {
+      const approvedApps = await Application.findApprovedByChallengeId(challengeId);
+      const isApproved = approvedApps.some(app => app.startup_id === startupId);
+      if (!isApproved) {
+        return formatError(res, 'Startup has not passed the Expert Evaluation Scorecard for this Challenge. Sandbox provisioning rejected.', 403);
+      }
+    }
+
     const pilot = await Pilot.create({
       pilotCode,
       name:                  data.name,

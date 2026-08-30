@@ -295,6 +295,10 @@ window.GovApi = {
         return this.request(`/api/applications/challenge/${challengeId}${params ? '?' + params : ''}`);
     },
 
+    async getApprovedApplications(challengeId) {
+        return this.request(`/api/applications/challenge/${challengeId}/approved`);
+    },
+
     // --- EVALUATION ENDPOINTS ---
     async getEvaluationCriteria(challengeId) {
         return this.request(`/api/evaluations/criteria/${challengeId}`);

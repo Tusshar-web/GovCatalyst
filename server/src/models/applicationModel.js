@@ -67,6 +67,21 @@ const Application = {
     query += ' ORDER BY a.match_score DESC NULLS LAST, a.created_at DESC';
     const { rows } = await pool.query(query, values);
     return rows;
+  },
+
+  async findApprovedByChallengeId(challenge_id) {
+    const query = `
+      SELECT a.*, s.company_name, s.sector, s.stage, s.dpiit_reg_number, s.tech_tags as startup_tags,
+             ep.panel_recommendation, ep.avg_weighted_score
+      FROM applications a
+      JOIN startups s ON a.startup_id = s.id
+      JOIN evaluation_panel_decisions ep ON ep.application_id = a.id
+      WHERE a.challenge_id = $1 
+        AND ep.panel_recommendation IN ('APPROVE', 'CONDITIONAL')
+      ORDER BY ep.avg_weighted_score DESC
+    `;
+    const { rows } = await pool.query(query, [challenge_id]);
+    return rows;
   }
 };
 

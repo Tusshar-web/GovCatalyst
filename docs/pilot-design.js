@@ -70,53 +70,59 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('Live challenges fetch notice:', e.message);
             }
 
-            // Attempt to fetch live startups
-            try {
-                const appRes = await GovApi.getStartups();
-                if (appRes && appRes.success && Array.isArray(appRes.startups) && appRes.startups.length > 0) {
-                    const uniqueStartups = [];
-                    appRes.startups.forEach(a => {
-                        const sName = a.company_name || a.startup_name || a.name || a.applicant_name;
-                        if (sName && !uniqueStartups.some(u => u.name === sName)) {
-                            uniqueStartups.push({
-                                id: a.id,
-                                name: sName,
-                                sector: a.sector || 'AgriTech / GovTech'
-                            });
-                        }
-                    });
-                    if (uniqueStartups.length > 0) {
-                        startups = uniqueStartups;
-                        GovData.startups = startups;
-                    }
-                }
-            } catch (e) {
-                console.log('Live startups fetch notice:', e.message);
-            }
-        }
-
         if (inpPilotChallenge) {
-            inpPilotChallenge.innerHTML = challenges.length > 0
+            inpPilotChallenge.innerHTML = '<option value="">-- Select Challenge --</option>' + 
+                (challenges.length > 0
                 ? challenges.map(c => `
                     <option value="${c.id}" ${c.id === preChallengeId ? 'selected' : ''}>
                         [${typeof c.id === 'string' ? c.id.substring(0, 8) : c.id}] ${c.title}
                     </option>
                   `).join('')
-                : '<option value="">-- No Challenges Found --</option>';
+                : '<option value="">-- No Challenges Found --</option>');
         }
 
-        if (inpPilotStartup) {
-            inpPilotStartup.innerHTML = startups.length > 0
-                ? startups.map(s => `
-                    <option value="${s.id}" ${s.id === preStartupId ? 'selected' : ''}>
-                        [${s.id}] ${s.name} (${s.sector || 'GovTech'})
-                    </option>
-                  `).join('')
-                : '<option value="">-- No Startups Registered --</option>';
+        if (inpPilotChallenge && inpPilotStartup) {
+            inpPilotChallenge.addEventListener('change', async (e) => {
+                await loadApprovedStartups(e.target.value);
+            });
+            // Initial load if a challenge is pre-selected or first available
+            const initialCh = preChallengeId || (challenges.length > 0 ? challenges[0].id : null);
+            if (initialCh) {
+                if (!preChallengeId) inpPilotChallenge.value = initialCh;
+                await loadApprovedStartups(initialCh);
+            } else {
+                inpPilotStartup.innerHTML = '<option value="">-- Select Challenge First --</option>';
+            }
         }
 
         if (preStartupId || preChallengeId) {
             toggleForm(true);
+        }
+    }
+
+    async function loadApprovedStartups(challengeId) {
+        if (!challengeId) {
+            inpPilotStartup.innerHTML = '<option value="">-- Select Challenge First --</option>';
+            return;
+        }
+        
+        inpPilotStartup.innerHTML = '<option value="">Loading evaluated startups...</option>';
+        try {
+            let optionsHtml = '';
+            if (window.GovApi) {
+                const appRes = await GovApi.getApprovedApplications(challengeId);
+                if (appRes && appRes.success && appRes.applications && appRes.applications.length > 0) {
+                    optionsHtml = appRes.applications.map(a => `
+                        <option value="${a.startup_id}" ${a.startup_id === preStartupId ? 'selected' : ''}>
+                            [${a.startup_id.substring(0,8)}] ${a.company_name} (${a.panel_recommendation} - Score: ${a.avg_weighted_score})
+                        </option>
+                    `).join('');
+                }
+            }
+            inpPilotStartup.innerHTML = optionsHtml || '<option value="">-- No Approved Startups Found --</option>';
+        } catch (err) {
+            console.error('Failed to load approved startups:', err);
+            inpPilotStartup.innerHTML = '<option value="">-- Error Loading Startups --</option>';
         }
     }
 
