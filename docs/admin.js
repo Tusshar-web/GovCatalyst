@@ -278,6 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderSignoffs() {
         signoffsCount.textContent = GovData.validatorSignoffs.length;
 
+        if (GovData.validatorSignoffs.length === 0) {
+            signoffsTbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No pending validator sign-offs found.</td></tr>';
+            return;
+        }
+
         signoffsTbody.innerHTML = GovData.validatorSignoffs.map(so => {
             const isSigned = so.status === 'Signed Off';
             const actionBtn = isSigned 
@@ -337,6 +342,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Users
     function renderUsers() {
         usersCount.textContent = GovData.users.length;
+
+        if (GovData.users.length === 0) {
+            usersTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No active user records found. Use the + Provision New User button to create users.</td></tr>';
+            return;
+        }
 
         usersTbody.innerHTML = GovData.users.map(u => `
             <tr>
