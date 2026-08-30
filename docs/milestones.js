@@ -155,6 +155,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         let pilots = GovData.pilots || [];
 
         if (window.GovApi) {
+            // If not logged in, don't bother calling the API
+            const token = GovApi.getToken();
+            if (!token) {
+                if (selPilot) selPilot.innerHTML = '<option disabled selected>⚠ Not signed in — please log in to load pilots</option>';
+                GovUtils.showToast('Please sign in to view your pilot sandbox contracts.', 'warning');
+                return;
+            }
+
             // Show a loading placeholder in the dropdown
             if (selPilot) selPilot.innerHTML = '<option disabled selected>Loading pilots from database…</option>';
             try {
@@ -174,19 +182,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }));
                     GovData.pilots = livePilots;
                     pilots = livePilots;
+                } else if (res && res.success && Array.isArray(res.data) && res.data.length === 0) {
+                    // Authenticated but no pilots in DB yet
+                    if (selPilot) selPilot.innerHTML = '<option disabled selected>No pilot sandbox contracts found in database</option>';
+                    if (cardsContainer) cardsContainer.innerHTML = `
+                        <div class="col-12 text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-secondary d-block mb-3"></i>
+                            <h5 class="fw-bold text-navy">No Pilot Sandboxes Found</h5>
+                            <p class="text-muted small">No pilot contracts exist in the database yet. Create one via the <a href="pilot-design.html">Pilot Design</a> module.</p>
+                        </div>`;
+                    return;
                 }
             } catch (e) {
                 console.warn('Pilots fetch error:', e.message);
-                GovUtils.showToast('Could not fetch pilots from backend. Showing local data.', 'warning');
+                const isNetworkErr = e.message.includes('fetch') || e.message.includes('network') || e.message.includes('ECONNREFUSED') || e.message.includes('Failed');
+                const errMsg = isNetworkErr
+                    ? 'Cannot reach server — check your connection or that the server is running.'
+                    : (e.message || 'Could not fetch pilots from backend.');
+                if (selPilot) selPilot.innerHTML = `<option disabled selected>⚠ ${errMsg}</option>`;
+                GovUtils.showToast(errMsg, 'error');
+                return;
             }
         }
 
         if (selPilot) {
-            selPilot.innerHTML = pilots.map(p => `
+            selPilot.innerHTML = pilots.length > 0
+                ? pilots.map(p => `
                 <option value="${p.dbId || p.id}" ${(p.dbId === prePilotId || p.id === prePilotId) ? 'selected' : ''}>
                     [${p.id}] ${p.name} (${p.status})
                 </option>
-            `).join('');
+            `).join('')
+                : '<option disabled selected>No pilots available</option>';
         }
     }
 
