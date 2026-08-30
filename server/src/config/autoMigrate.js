@@ -37,6 +37,19 @@ async function runAutoMigration() {
     }
   }
 
+  // Ensure milestone status check constraint includes all lifecycle states
+  try {
+    await pool.query(`
+      ALTER TABLE gov_pilot_milestones 
+      DROP CONSTRAINT IF EXISTS gov_pilot_milestones_status_check;
+      ALTER TABLE gov_pilot_milestones 
+      ADD CONSTRAINT gov_pilot_milestones_status_check 
+      CHECK (status IN ('Pending','In Progress','Under Review','Verified','Completed','Overdue','Rejected'));
+    `);
+  } catch (mErr) {
+    // ignore if table doesn't exist yet
+  }
+
   // Ensure default super_admin exists
   try {
     const adminEmail = process.env.SUPERADMIN_EMAIL || 'learnova.service@gmail.com';

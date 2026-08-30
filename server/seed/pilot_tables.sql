@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS gov_pilot_milestones (
   payment_amount  NUMERIC(14,2) NOT NULL DEFAULT 0,
   payment_linked  BOOLEAN      NOT NULL DEFAULT true,
   status          VARCHAR(32)  NOT NULL DEFAULT 'Pending'
-                    CHECK (status IN ('Pending','In Progress','Verified','Overdue')),
+                    CHECK (status IN ('Pending','In Progress','Under Review','Verified','Completed','Overdue','Rejected')),
   created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
   updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
