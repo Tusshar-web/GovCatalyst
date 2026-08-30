@@ -145,16 +145,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const chId = scoreChallenge.value;
         const evId = scoreEvaluator.value;
 
+        const assignmentId = `assign_${evId}_${suId}`; // Mock ID as fallback
+
         const newScore = {
             startupId: suId,
             challengeId: chId,
             evaluatorId: evId,
-            scores: {
-                innovation: parseInt(rngInno.value, 10),
-                feasibility: parseInt(rngFeas.value, 10),
-                scalability: parseInt(rngScal.value, 10),
-                cost: parseInt(rngCost.value, 10)
-            },
+            assignmentId: assignmentId,
+            scores: [
+                { criterionId: 'innovation', score: parseInt(rngInno.value, 10) },
+                { criterionId: 'feasibility', score: parseInt(rngFeas.value, 10) },
+                { criterionId: 'scalability', score: parseInt(rngScal.value, 10) },
+                { criterionId: 'cost', score: parseInt(rngCost.value, 10) }
+            ],
             comments: document.getElementById('inp-score-comments').value.trim() || 'Evaluated per standard GFR rubric.'
         };
 
@@ -203,10 +206,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     latestComment: es.comments
                 };
             }
-            grouped[key].innoTotal += es.scores.innovation;
-            grouped[key].feasTotal += es.scores.feasibility;
-            grouped[key].scalTotal += es.scores.scalability;
-            grouped[key].costTotal += es.scores.cost;
+            const getScore = (critId) => {
+                if (Array.isArray(es.scores)) {
+                    const s = es.scores.find(x => x.criterionId === critId);
+                    return s ? s.score : 0;
+                }
+                return es.scores[critId] || 0;
+            };
+
+            grouped[key].innoTotal += getScore('innovation');
+            grouped[key].feasTotal += getScore('feasibility');
+            grouped[key].scalTotal += getScore('scalability');
+            grouped[key].costTotal += getScore('cost');
             grouped[key].count += 1;
             const ev = GovData.evaluators.find(e => e.id === es.evaluatorId);
             if (ev) grouped[key].evaluators.push(ev.name);
