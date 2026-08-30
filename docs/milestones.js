@@ -439,16 +439,50 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const badgeClass = isDone ? 'state-badge-completed' : (m.status === 'In Progress' ? 'state-badge-inprogress' : (m.status === 'Under Review' ? 'bg-info text-dark' : 'state-badge-pending'));
 
                             let nextActionBtn = '';
+                            const isStartup = normRole === 'startup';
+                            const isGov = normRole === 'dept_admin' || normRole === 'super_admin' || normRole === 'validator';
+
                             if (m.status === 'Pending') {
-                                nextActionBtn = `<button class="btn btn-sm btn-outline-primary btn-start-exec" data-dbid="${m.dbId}" data-id="${m.id}"><i class="bi bi-play-circle me-1"></i> Start Execution</button>`;
+                                if (isStartup) {
+                                    nextActionBtn = `<button class="btn btn-sm btn-outline-primary btn-start-exec" data-dbid="${m.dbId}" data-id="${m.id}"><i class="bi bi-play-circle me-1"></i> Start Execution</button>`;
+                                } else {
+                                    nextActionBtn = `<span class="text-muted small"><i class="bi bi-hourglass me-1"></i> Awaiting Startup Action</span>`;
+                                }
                             } else if (m.status === 'In Progress') {
-                                const escapedName = (m.name || '').replace(/"/g, '&quot;');
-                                const escapedEv = (m.evidenceType || 'System Audit Logs / Telemetry').replace(/"/g, '&quot;');
-                                nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-submit-deliv" data-dbid="${m.dbId}" data-id="${m.id}" data-phase="${m.phase || ph.id}" data-name="${escapedName}" data-evidence="${escapedEv}" data-amount="${m.paymentAmount}"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
+                                if (isStartup) {
+                                    const escapedName = (m.name || '').replace(/"/g, '&quot;');
+                                    const escapedEv = (m.evidenceType || 'System Audit Logs / Telemetry').replace(/"/g, '&quot;');
+                                    nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-submit-deliv" data-dbid="${m.dbId}" data-id="${m.id}" data-phase="${m.phase || ph.id}" data-name="${escapedName}" data-evidence="${escapedEv}" data-amount="${m.paymentAmount}"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
+                                } else {
+                                    nextActionBtn = `<span class="text-warning small"><i class="bi bi-gear-wide-connected me-1"></i> Under Active Development</span>`;
+                                }
                             } else if (m.status === 'Under Review') {
-                                nextActionBtn = `<button class="btn btn-sm btn-success btn-advance-verify" data-dbid="${m.dbId}" data-id="${m.id}" data-amount="${m.paymentAmount}" data-next="Verified"><i class="bi bi-shield-fill-check me-1"></i> Verify &amp; Disburse</button>`;
+                                if (isGov) {
+                                    nextActionBtn = `<button class="btn btn-sm btn-success btn-advance-verify" data-dbid="${m.dbId}" data-id="${m.id}" data-amount="${m.paymentAmount}" data-next="Verified"><i class="bi bi-shield-fill-check me-1"></i> Verify &amp; Disburse</button>`;
+                                } else {
+                                    nextActionBtn = `<span class="text-info small"><i class="bi bi-clock-history me-1"></i> Under Review by Government</span>`;
+                                }
                             } else {
                                 nextActionBtn = `<span class="text-success small fw-bold"><i class="bi bi-patch-check-fill me-1"></i> Verified &amp; Paid</span>`;
+                            }
+
+                            // Lookup matching evidence proof details
+                            const matchingEv = backendEvidences.find(ev => ev.related_milestone === m.id || ev.related_milestone === m.milestone_code);
+                            let evidenceBlock = '';
+                            if (matchingEv) {
+                                const isFile = matchingEv.file_url && (matchingEv.file_url.includes('/uploads/') || /\.(pdf|zip|json|png|jpg|jpeg|gif|csv|txt)$/i.test(matchingEv.file_url));
+                                const icon = isFile ? 'bi-file-earmark-check-fill text-success' : 'bi-link-45deg text-primary';
+                                evidenceBlock = `
+                                    <div class="mt-2 p-2 bg-white rounded border d-flex align-items-center justify-content-between" style="font-size: 11px;">
+                                        <div class="small text-truncate me-2" style="max-width: 70%;">
+                                            <i class="bi ${icon} me-1"></i>
+                                            <strong>Submitted:</strong> <span class="text-secondary" title="${matchingEv.name}">${matchingEv.name}</span>
+                                        </div>
+                                        <a href="${matchingEv.file_url}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 10px; height: 18px; line-height: 16px;">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>View Proof
+                                        </a>
+                                    </div>
+                                `;
                             }
 
                             return `
@@ -471,6 +505,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                                 <i class="bi bi-file-earmark-check text-primary me-1"></i>
                                                 <strong>Evidence Required:</strong> ${m.evidenceType || 'System Audit Logs / Telemetry'}
                                             </div>
+
+                                            ${evidenceBlock}
 
                                             <div class="row g-1 small border-top pt-2 text-muted mb-2" style="font-size: 11px;">
                                                 <div class="col-6"><strong>Due:</strong> ${GovUtils.formatDate(m.dueDate)}</div>
