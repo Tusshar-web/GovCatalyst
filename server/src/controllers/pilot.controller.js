@@ -90,8 +90,8 @@ async function createPilot(req, res) {
 
     // Strict Link Safeguard: Ensure startup has an approved evaluation for this challenge
     const Application = require('../models/applicationModel');
-    const challengeId = data.problemStatement || data.problemStatementText;
-    const startupId = data.startup;
+    const challengeId = data.challengeId;
+    const startupId = data.startupId;
     
     if (challengeId && startupId) {
       const approvedApps = await Application.findApprovedByChallengeId(challengeId);

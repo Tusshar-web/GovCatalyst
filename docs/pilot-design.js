@@ -316,9 +316,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const payload = {
                     name: name,
+                    challengeId: chId,
+                    startupId: suId,
                     problemStatement: selectedChallenge.title || name,
                     department: selectedChallenge.department || 'Government Department',
-                    startup: selectedStartup.name || suId,
+                    startup: selectedStartup.name || selectedStartup.company_name || suId,
                     startupLead: 'Innovator Lead',
                     solution: `${name} Solution Testbed`,
                     objective: threshold,
