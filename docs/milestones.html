@@ -34,13 +34,13 @@
         <span class="green-s"></span>
     </div>
 
-            <!-- Clean Minimal Top Bar: MSInS GovCatalyst on Left & ONLY Tricolor Hamburger on Right -->
+    <!-- Clean Minimal Top Bar -->
     <div class="top-bar-clean">
         <div class="container d-flex justify-content-between align-items-center">
             <a href="index.html" class="d-flex align-items-center gap-2 text-decoration-none">
                 <strong style="color: #ffffff; font-size: 17px; letter-spacing: -0.3px;">GovCatalyst</strong>
             </a>
-            <!-- 🇮🇳 ONLY Tricolor Hamburger Menu on Right -->
+            <!-- 🇮🇳 Tricolor Hamburger Menu -->
             <button class="top-tricolor-hamburger" id="gov-hamburger-toggle" aria-label="Toggle Modules Menu" title="All Modules Menu (10)">
                 <span class="tri-bar bar-saffron"></span>
                 <span class="tri-bar bar-white"></span>
@@ -62,8 +62,8 @@
             <!-- Page Header -->
             <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
-                    <h2><i class="bi bi-diagram-3-fill text-primary me-2"></i>4-Phase Milestone Contracting & Escrow</h2>
-                    <p>Dynamic 4-phase lifecycle contracting: Setup & Bilateral Agreement → Deployment & Telemetry → Live Testing → Final M&E & Scale</p>
+                    <h2><i class="bi bi-diagram-3-fill text-primary me-2"></i>4-Phase Milestone Contracting &amp; Escrow</h2>
+                    <p>Dynamic 4-phase lifecycle contracting: Setup &amp; Bilateral Agreement → Deployment &amp; Telemetry → Live Testing → Final M&amp;E &amp; Scale</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <button class="btn btn-gold" id="btn-toggle-milestone-form" onclick="window.GovMilestones && GovMilestones.toggleMilestoneForm()"><i class="bi bi-plus-circle me-1"></i> Add Milestone</button>
@@ -116,7 +116,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Innovator Partner & Location:</label>
+                            <label class="form-label fw-semibold">Innovator Partner &amp; Location:</label>
                             <div class="p-2 bg-light border rounded fw-bold text-navy" id="contract-partner-name">—</div>
                         </div>
                     </div>
@@ -130,23 +130,27 @@
                     <button type="button" class="btn-close btn-close-white" id="btn-close-milestone-form"></button>
                 </div>
                 <div class="gov-card-body">
+                    <!-- Pilot context label — updated dynamically by JS -->
+                    <div id="ms-form-pilot-label" class="alert alert-info py-2 small mb-3 fw-semibold">
+                        <i class="bi bi-file-earmark-text me-1"></i> Select a pilot above first
+                    </div>
                     <form id="form-add-milestone">
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Execution Phase <span class="text-danger">*</span></label>
                                 <select class="form-select" id="inp-ms-phase" required>
-                                    <option value="1">Phase 1: Setup & Bilateral Agreement</option>
-                                    <option value="2">Phase 2: Deployment & Telemetry Integration</option>
-                                    <option value="3" selected>Phase 3: Active Sandbox Testing & Execution</option>
-                                    <option value="4">Phase 4: Final Evaluation, Audit & Transition</option>
+                                    <option value="1">Phase 1: Setup &amp; Bilateral Agreement</option>
+                                    <option value="2">Phase 2: Deployment &amp; Telemetry Integration</option>
+                                    <option value="3" selected>Phase 3: Active Sandbox Testing &amp; Execution</option>
+                                    <option value="4">Phase 4: Final Evaluation, Audit &amp; Transition</option>
                                 </select>
                             </div>
                             <div class="col-md-8">
                                 <label class="form-label fw-semibold">Milestone Deliverable Title <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="inp-ms-name" placeholder="e.g., IoT Sensor Network Installation & Telemetry Calibration" required>
+                                <input type="text" class="form-control" id="inp-ms-name" placeholder="e.g., IoT Sensor Network Installation &amp; Telemetry Calibration" required>
                             </div>
                             <div class="col-md-12">
-                                <label class="form-label fw-semibold">Deliverable Acceptance Criteria & Scope <span class="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Deliverable Acceptance Criteria &amp; Scope <span class="text-danger">*</span></label>
                                 <textarea class="form-control" id="inp-ms-desc" rows="2" placeholder="Specify verifiable deliverables, test run targets, or compliance audits..." required></textarea>
                             </div>
                             <div class="col-md-4">
@@ -164,7 +168,7 @@
                                 <label class="form-label fw-semibold">Verification Evidence Type</label>
                                 <select class="form-select" id="inp-ms-evidence">
                                     <option value="System Audit Logs">System Audit Logs / Telemetry</option>
-                                    <option value="Invoices / Billing Receipts">Invoices & Financial Receipts</option>
+                                    <option value="Invoices / Billing Receipts">Invoices &amp; Financial Receipts</option>
                                     <option value="GPS Telematics Trace">GPS Telematics / Field Inspection</option>
                                     <option value="Citizen Audit Report">Citizen Satisfaction Survey</option>
                                     <option value="Validator Sign-Off">Section 65B Independent Sign-off</option>
@@ -194,7 +198,7 @@
 
             <!-- Milestone Cards Grouped by 4 Phases -->
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-navy mb-0"><i class="bi bi-list-check me-2"></i>Phase-Wise Milestone Contracts & Verification State Machine</h5>
+                <h5 class="fw-bold text-navy mb-0"><i class="bi bi-list-check me-2"></i>Phase-Wise Milestone Contracts &amp; Verification State Machine</h5>
                 <small class="text-muted">Click action buttons to advance lifecycle states</small>
             </div>
 
@@ -231,7 +235,7 @@
                     <h5>Quick Links</h5>
                     <ul>
                         <li><a href="milestones.html">Milestone Contracting</a></li>
-                        <li><a href="performance.html">KPI Performance M&E</a></li>
+                        <li><a href="performance.html">KPI Performance M&amp;E</a></li>
                         <li><a href="payments.html">Milestone Payments</a></li>
                         <li><a href="scaleup.html">Scale-up Transition</a></li>
                     </ul>

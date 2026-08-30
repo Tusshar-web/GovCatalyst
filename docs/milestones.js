@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const phaseProgress = [1, 2, 3, 4].map(phId => {
             const phMilestones = pilotMilestones.filter(m => (m.phase || 1) === phId);
             const total = phMilestones.length;
-            const completed = phMilestones.filter(m => m.status === 'Completed').length;
+            const completed = phMilestones.filter(m => m.status === 'Completed' || m.status === 'Verified').length;
             const inProgress = phMilestones.some(m => m.status === 'In Progress' || m.status === 'Under Review');
             return {
                 id: phId,
@@ -379,11 +379,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Update summary stats
         const total = pMilestones.length;
-        const completed = pMilestones.filter(m => m.status === 'Completed').length;
+        const completed = pMilestones.filter(m => m.status === 'Completed' || m.status === 'Verified').length;
         const totalEscrow = pMilestones.reduce((sum, m) => sum + (m.paymentAmount || 0), 0);
 
         if (statTotalMilestones) statTotalMilestones.textContent = total;
-        if (statCompletedMilestones) statCompletedMilestones.textContent = `${completed} / ${total}`;
+        if (statCompletedMilestones) statCompletedMilestones.textContent = completed;
         if (statEscrowAmount) statEscrowAmount.textContent = GovUtils.formatCurrency(totalEscrow);
 
         renderPipeline(pMilestones);
@@ -434,8 +434,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 </div>
                             </div>
                         ` : phMilestones.map(m => {
-                            const stateClass = m.status === 'Completed' ? 'state-completed' : (m.status === 'In Progress' ? 'state-inprogress' : (m.status === 'Under Review' ? 'state-inprogress' : 'state-pending'));
-                            const badgeClass = m.status === 'Completed' ? 'state-badge-completed' : (m.status === 'In Progress' ? 'state-badge-inprogress' : (m.status === 'Under Review' ? 'bg-info text-dark' : 'state-badge-pending'));
+                            const isDone = m.status === 'Completed' || m.status === 'Verified';
+                            const stateClass = isDone ? 'state-completed' : (m.status === 'In Progress' ? 'state-inprogress' : (m.status === 'Under Review' ? 'state-inprogress' : 'state-pending'));
+                            const badgeClass = isDone ? 'state-badge-completed' : (m.status === 'In Progress' ? 'state-badge-inprogress' : (m.status === 'Under Review' ? 'bg-info text-dark' : 'state-badge-pending'));
 
                             let nextActionBtn = '';
                             if (m.status === 'Pending') {
@@ -443,9 +444,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                             } else if (m.status === 'In Progress') {
                                 nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="Under Review"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
                             } else if (m.status === 'Under Review') {
-                                nextActionBtn = `<button class="btn btn-sm btn-success btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="Verified"><i class="bi bi-shield-fill-check me-1"></i> Verify & Disburse</button>`;
+                                nextActionBtn = `<button class="btn btn-sm btn-success btn-advance-verify" data-dbid="${m.dbId}" data-id="${m.id}" data-amount="${m.paymentAmount}" data-next="Verified"><i class="bi bi-shield-fill-check me-1"></i> Verify &amp; Disburse</button>`;
                             } else {
-                                nextActionBtn = `<span class="text-success small fw-bold"><i class="bi bi-patch-check-fill me-1"></i> Verified & Paid</span>`;
+                                nextActionBtn = `<span class="text-success small fw-bold"><i class="bi bi-patch-check-fill me-1"></i> Verified &amp; Paid</span>`;
                             }
 
                             return `
@@ -490,13 +491,57 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         cardsContainer.innerHTML = html;
 
-        // Bind advance buttons
+        // Bind regular advance buttons (Pending → In Progress, In Progress → Under Review)
         document.querySelectorAll('.btn-advance').forEach(btn => {
             btn?.addEventListener('click', () => {
                 const mId = btn.dataset.id;
                 const dbId = btn.dataset.dbid;
                 const nextState = btn.dataset.next;
                 advanceMilestoneState(mId, dbId, nextState);
+            });
+        });
+
+        // Bind Verify & Disburse buttons — require confirmation before irreversible escrow payout
+        document.querySelectorAll('.btn-advance-verify').forEach(btn => {
+            btn?.addEventListener('click', () => {
+                const mId = btn.dataset.id;
+                const dbId = btn.dataset.dbid;
+                const amount = parseFloat(btn.dataset.amount) || 0;
+                const formatted = GovUtils.formatCurrency(amount);
+
+                // Confirmation modal
+                const overlayId = 'escrow-confirm-overlay';
+                let overlay = document.getElementById(overlayId);
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = overlayId;
+                    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                    document.body.appendChild(overlay);
+                }
+                overlay.innerHTML = `
+                    <div class="bg-white rounded-3 shadow-lg p-4" style="max-width:420px;width:90%;">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-shield-lock-fill fs-1 text-warning"></i>
+                        </div>
+                        <h5 class="fw-bold text-navy text-center mb-1">Confirm Escrow Disbursal</h5>
+                        <p class="text-muted small text-center mb-3">You are about to verify this milestone deliverable and release the escrow tranche. This action <strong>cannot be undone</strong>.</p>
+                        <div class="p-3 bg-light rounded border mb-3 text-center">
+                            <div class="text-muted small">Escrow Tranche Amount</div>
+                            <div class="fs-4 fw-bold text-success">${formatted}</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-secondary flex-fill" id="escrow-cancel-btn"><i class="bi bi-x-circle me-1"></i>Cancel</button>
+                            <button class="btn btn-success flex-fill" id="escrow-confirm-btn"><i class="bi bi-patch-check-fill me-1"></i>Confirm & Disburse</button>
+                        </div>
+                    </div>
+                `;
+                overlay.style.display = 'flex';
+
+                document.getElementById('escrow-cancel-btn').onclick = () => { overlay.style.display = 'none'; };
+                document.getElementById('escrow-confirm-btn').onclick = () => {
+                    overlay.style.display = 'none';
+                    advanceMilestoneState(mId, dbId, 'Verified');
+                };
             });
         });
     }
@@ -521,7 +566,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (e) {
             console.error('Milestone update error:', e);
-            GovUtils.showToast('Failed to sync milestone state to backend.', 'error');
+            GovUtils.showToast('Failed to update milestone — ' + (e.message || 'server error'), 'error');
+            return; // ← abort: don't show success or re-render stale state
         }
 
         GovData.auditTrail.unshift({
@@ -535,12 +581,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         await renderMilestoneCards(pId);
-        GovUtils.showToast(`Milestone ${mId} transitioned to "${nextState}"!`, 'success');
+        const msg = nextState === 'Verified'
+            ? `✅ Milestone ${mId} verified and escrow tranche disbursed!`
+            : `Milestone ${mId} transitioned to "${nextState}"!`;
+        GovUtils.showToast(msg, 'success');
     }
 
     // ─────────────────────────────────────────────────────────────
     // 6. ADD NEW MILESTONE FORM SUBMIT
     // ─────────────────────────────────────────────────────────────
+
+    // Update the pilot context label whenever the dropdown changes
+    function updateMilestoneFormPilotLabel() {
+        const pId = selPilot?.value;
+        const p = pId && GovData.pilots.find(item => item.dbId === pId || item.id === pId);
+        const label = document.getElementById('ms-form-pilot-label');
+        if (label) label.textContent = p ? `Adding milestone to: [${p.id}] ${p.name}` : 'Select a pilot above first';
+    }
+    selPilot?.addEventListener('change', updateMilestoneFormPilotLabel);
+    // Trigger on load after pilots populate
+    setTimeout(updateMilestoneFormPilotLabel, 600);
+
     formAddMilestone?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const pId = selPilot.value;
