@@ -114,8 +114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const res = await GovApi.createChallenge({
                     title: newChallenge.title,
-                    problem_statement: newChallenge.description,
-                    outcome_objective: newChallenge.outcomeStatement,
+                    raw_problem_input: newChallenge.description,
+                    outcome_statement: newChallenge.outcomeStatement,
                     sector: newChallenge.category,
                     department: newChallenge.department
                 });
@@ -152,7 +152,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             if (window.GovApi) {
                 const res = await GovApi.getChallenges();
-                if (res.success && res.challenges) challengesList = res.challenges;
+                if (res.success && res.challenges) {
+                    challengesList = res.challenges.map(c => ({
+                        ...c,
+                        status: c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Draft'
+                    }));
+                }
             }
         } catch (e) {
             console.warn('Backend unavailable, using local data:', e.message);
@@ -161,9 +166,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const filtered = challengesList.filter(c => {
             const matchesSearch = c.title.toLowerCase().includes(search) ||
-                c.department.toLowerCase().includes(search) ||
+                (c.department && c.department.toLowerCase().includes(search)) ||
                 c.id.toLowerCase().includes(search);
-            const matchesStatus = !status || c.status === status;
+            const matchesStatus = !status || c.status.toLowerCase() === status.toLowerCase();
             return matchesSearch && matchesStatus;
         });
 
@@ -181,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </td>
                 <td><small class="fw-medium">${c.department}</small></td>
                 <td><span class="badge bg-light text-dark border">${c.category}</span></td>
-                <td><span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status}</span></td>
+                <td><span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span></td>
                 <td><small class="text-muted">${GovUtils.formatDate(c.createdDate)}</small></td>
                 <td class="text-end">
                     <div class="btn-group btn-group-sm">
@@ -219,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="badge bg-primary me-2">${c.id}</span>
                         <span class="badge bg-secondary">${c.category}</span>
                     </div>
-                    <span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status}</span>
+                    <span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span>
                 </div>
                 <h5 class="fw-bold text-navy mb-1">${c.title}</h5>
                 <p class="text-muted mb-3"><i class="bi bi-building me-1"></i> ${c.department}</p>

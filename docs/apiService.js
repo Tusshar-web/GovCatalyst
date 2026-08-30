@@ -138,6 +138,12 @@ window.GovApi = {
         });
     },
 
+    async publishChallenge(id) {
+        return this.request(`/api/challenges/${id}/publish`, {
+            method: 'PATCH'
+        });
+    },
+
     async generateChallengeDraft(draftData) {
         return this.request('/api/challenges/ai-draft', {
             method: 'POST',
