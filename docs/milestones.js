@@ -617,7 +617,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const amount = parseInt(document.getElementById('inp-ms-amount').value, 10) || 0;
         const evidence = document.getElementById('inp-ms-evidence').value;
 
-        const newId = `MS-${pId}-P${phase}-${Date.now().toString().slice(-4)}`;
+        // milestone_code is VARCHAR(32) — keep compact: MS-P{phase}-{6-char pilot prefix}-{4-char timestamp}
+        const pilotPrefix = (pId || '').replace(/-/g, '').substring(0, 6).toUpperCase();
+        const newId = `MS-P${phase}-${pilotPrefix}-${Date.now().toString().slice(-4)}`;
 
         try {
             if (window.GovApi) {
