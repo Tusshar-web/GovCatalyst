@@ -126,15 +126,30 @@ document.addEventListener('DOMContentLoaded', () => {
         let alerts = alertsState[pilotId] || [];
         let evidences = evidenceStore[pilotId] || [];
 
+        const backendPilotId = p.dbId || pilotId;
+
         try {
             if (window.GovApi) {
-                const kpiRes = await GovApi.getPilotKpis(pilotId);
-                if (kpiRes && kpiRes.success && kpiRes.data) kpis = kpiRes.data;
+                const kpiRes = await GovApi.getPilotKpis(backendPilotId);
+                if (kpiRes && kpiRes.success && kpiRes.data) {
+                    kpis = kpiRes.data.map(k => ({
+                        id: k.id,
+                        code: k.kpi_code,
+                        name: k.name,
+                        category: k.category,
+                        direction: k.direction === 'LOWER_IS_BETTER' ? 'lower' : 'higher',
+                        unit: k.unit,
+                        baseline: parseFloat(k.baseline) || 0,
+                        target: parseFloat(k.target) || 0,
+                        minAcceptable: parseFloat(k.min_acceptable) || 0,
+                        current: parseFloat(k.current) || 0
+                    }));
+                }
                 
-                const alertsRes = await GovApi.getPilotAlerts(pilotId);
+                const alertsRes = await GovApi.getPilotAlerts(backendPilotId);
                 if (alertsRes && alertsRes.success && alertsRes.data) alerts = alertsRes.data;
                 
-                const evRes = await GovApi.getPilotEvidences(pilotId);
+                const evRes = await GovApi.getPilotEvidences(backendPilotId);
                 if (evRes && evRes.success && evRes.data) evidences = evRes.data;
             }
         } catch (e) {

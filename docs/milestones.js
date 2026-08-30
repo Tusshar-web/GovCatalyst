@@ -190,106 +190,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     // 2. AUTO-PROVISION STANDARD 4-PHASE MILESTONES FOR A PILOT
     // ─────────────────────────────────────────────────────────────
-    function autoProvision4Phases(pilotId) {
+    async function autoProvision4Phases(pilotId) {
         const p = GovData.pilots.find(item => item.id === pilotId || item.dbId === pilotId);
         if (!p) return;
 
-        // Remove existing milestones for this pilot if resetting
-        GovData.milestones = GovData.milestones.filter(m => m.pilotId !== pilotId);
+        const btnAuto = document.getElementById('btn-auto-4phases');
+        const origText = btnAuto ? btnAuto.innerHTML : '';
+        if (btnAuto) btnAuto.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Provisioning...';
 
-        const now = new Date();
-        const d1 = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const d2 = new Date(now.getTime() + 35 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const d3 = new Date(now.getTime() + 65 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const d4 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-        const standard4 = [
-            {
-                id: `MS-${pilotId}-01`,
-                pilotId: pilotId,
-                phase: 1,
-                name: 'Bilateral Agreement, Legal Indemnity & Testbed Scoping',
-                description: 'Execute GFR Rule 194 bilateral charter, sign IP ownership & confidentiality clauses, configure isolated sandbox perimeter.',
-                status: 'Completed',
-                dueDate: d1,
-                completedDate: new Date().toISOString().split('T')[0],
-                paymentLinked: true,
-                paymentAmount: 100000,
-                evidenceType: 'Validator Sign-Off'
-            },
-            {
-                id: `MS-${pilotId}-02`,
-                pilotId: pilotId,
-                phase: 2,
-                name: 'System Deployment & Telemetry Ingestion Setup',
-                description: 'Deploy IoT hardware sensors / AI models, establish automated telemetry pipeline and CERT-In security scan clearance.',
-                status: 'In Progress',
-                dueDate: d2,
-                completedDate: null,
-                paymentLinked: true,
-                paymentAmount: 150000,
-                evidenceType: 'System Audit Logs'
-            },
-            {
-                id: `MS-${pilotId}-03`,
-                pilotId: pilotId,
-                phase: 3,
-                name: 'Live Operational Field Trials & 100-Run Dataset Validation',
-                description: 'Execute live operational runs in designated testbed, collect multi-source telemetry data, conduct mid-term performance check.',
-                status: 'Pending',
-                dueDate: d3,
-                completedDate: null,
-                paymentLinked: true,
-                paymentAmount: 150000,
-                evidenceType: 'GPS Telematics Trace'
-            },
-            {
-                id: `MS-${pilotId}-04`,
-                pilotId: pilotId,
-                phase: 4,
-                name: 'Comprehensive M&E Report & Independent Audit Sign-Off',
-                description: 'Submit 22-section final evaluation report, obtain Section 65B validator certification, formulate GeM scale-up bid draft.',
-                status: 'Pending',
-                dueDate: d4,
-                completedDate: null,
-                paymentLinked: true,
-                paymentAmount: 100000,
-                evidenceType: 'Citizen Audit Report'
+        try {
+            if (window.GovApi) {
+                const dbId = p.dbId || pilotId;
+                const res = await GovApi.autoGenerateMilestones(dbId);
+                if (res && res.success) {
+                    GovUtils.showToast(`Standard 4-Phase milestone schedule configured for ${pilotId}!`, 'success');
+                } else {
+                    throw new Error(res.message || 'Auto-generation failed');
+                }
+            } else {
+                GovUtils.showToast('API not available. Cannot auto-provision in offline mode.', 'error');
             }
-        ];
-
-        GovData.milestones.unshift(...standard4);
-
-        // Sync corresponding payments
-        standard4.forEach((ms, idx) => {
-            const payId = `PAY-${pilotId}-${idx + 1}`;
-            if (!GovData.payments.some(pay => pay.milestoneId === ms.id)) {
-                GovData.payments.unshift({
-                    id: payId,
-                    milestoneId: ms.id,
-                    pilotId: pilotId,
-                    amount: ms.paymentAmount,
-                    status: ms.status === 'Completed' ? 'Released' : 'In Escrow',
-                    requestDate: ms.status === 'Completed' ? new Date().toISOString().split('T')[0] : null,
-                    approvalDate: ms.status === 'Completed' ? new Date().toISOString().split('T')[0] : null,
-                    releaseDate: ms.status === 'Completed' ? new Date().toISOString().split('T')[0] : null,
-                    escrowHeld: ms.status !== 'Completed'
-                });
-            }
-        });
-
-        GovData.auditTrail.unshift({
-            id: GovData.auditTrail.length + 1,
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            user: currentUser ? currentUser.name : 'Authorized Officer',
-            role: currentUser ? currentUser.role : 'Dept Admin',
-            action: '4-Phase Schedule Created',
-            module: 'Milestones',
-            detail: `Auto-provisioned standard 4-phase GFR 194 milestone contract schedule for ${pilotId}`
-        });
-
-        renderMilestoneCards(pilotId);
-        GovUtils.showToast(`Standard 4-Phase milestone schedule configured for ${pilotId}!`, 'success');
+        } catch (e) {
+            console.error('Milestone auto-provision error:', e);
+            GovUtils.showToast(e.message || 'Failed to provision milestones', 'error');
+        } finally {
+            if (btnAuto) btnAuto.innerHTML = origText;
+            await renderMilestoneCards(pilotId);
+        }
     }
 
     btnAuto4Phases?.addEventListener('click', () => {
@@ -382,7 +309,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         p._backendEvidences = backendEvidences;
 
         // Filter milestones for this pilot
-        const pMilestones = GovData.milestones.filter(m => m.pilotId === pilotId);
+        let pMilestones = [];
+        try {
+            if (window.GovApi) {
+                const msRes = await GovApi.getPilotMilestones(dbId);
+                if (msRes && msRes.success && Array.isArray(msRes.data)) {
+                    pMilestones = msRes.data.map(m => ({
+                        id: m.milestone_code,
+                        dbId: m.id,
+                        pilotId: pilotId,
+                        phase: m.phase,
+                        name: m.name,
+                        description: m.description,
+                        status: m.status,
+                        dueDate: m.due_date,
+                        completedDate: m.completed_date,
+                        paymentLinked: m.payment_linked,
+                        paymentAmount: parseFloat(m.payment_amount) || 0,
+                        evidenceType: 'System Record'
+                    }));
+                }
+            }
+        } catch (e) {
+            console.warn('Backend milestones fetch fallback:', e.message);
+            pMilestones = GovData.milestones.filter(m => m.pilotId === pilotId);
+        }
+
+        // Cache the fetched milestones for use in agreement modal
+        p._backendMilestones = pMilestones;
 
         // Update stats
         const total = pMilestones.length;
@@ -446,11 +400,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                             let nextActionBtn = '';
                             if (m.status === 'Pending') {
-                                nextActionBtn = `<button class="btn btn-sm btn-outline-primary btn-advance" data-id="${m.id}" data-next="In Progress"><i class="bi bi-play-circle me-1"></i> Start Execution</button>`;
+                                nextActionBtn = `<button class="btn btn-sm btn-outline-primary btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="In Progress"><i class="bi bi-play-circle me-1"></i> Start Execution</button>`;
                             } else if (m.status === 'In Progress') {
-                                nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-advance" data-id="${m.id}" data-next="Under Review"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
+                                nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="Under Review"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
                             } else if (m.status === 'Under Review') {
-                                nextActionBtn = `<button class="btn btn-sm btn-success btn-advance" data-id="${m.id}" data-next="Completed"><i class="bi bi-shield-fill-check me-1"></i> Verify & Disburse</button>`;
+                                nextActionBtn = `<button class="btn btn-sm btn-success btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="Verified"><i class="bi bi-shield-fill-check me-1"></i> Verify & Disburse</button>`;
                             } else {
                                 nextActionBtn = `<span class="text-success small fw-bold"><i class="bi bi-patch-check-fill me-1"></i> Verified & Paid</span>`;
                             }
@@ -501,8 +455,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('.btn-advance').forEach(btn => {
             btn?.addEventListener('click', () => {
                 const mId = btn.dataset.id;
+                const dbId = btn.dataset.dbid;
                 const nextState = btn.dataset.next;
-                advanceMilestoneState(mId, nextState);
+                advanceMilestoneState(mId, dbId, nextState);
             });
         });
     }
@@ -516,34 +471,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ─────────────────────────────────────────────────────────────
     // 5. STATE MACHINE ADVANCE LOGIC
     // ─────────────────────────────────────────────────────────────
-    function advanceMilestoneState(mId, nextState) {
-        const m = GovData.milestones.find(item => item.id === mId);
-        if (!m) return;
+    async function advanceMilestoneState(mId, dbId, nextState) {
+        const pId = selPilot.value;
+        const p = GovData.pilots.find(item => item.id === pId || item.dbId === pId);
+        const backendPilotId = p?.dbId || pId;
 
-        m.status = nextState;
-        if (nextState === 'Completed') {
-            m.completedDate = new Date().toISOString().split('T')[0];
-
-            // If payment linked, update payment status in GovData.payments
-            let pay = GovData.payments.find(p => p.milestoneId === mId);
-            if (pay) {
-                pay.status = 'Released';
-                pay.approvalDate = new Date().toISOString().split('T')[0];
-                pay.releaseDate = new Date().toISOString().split('T')[0];
-                pay.escrowHeld = false;
-            } else if (m.paymentLinked && m.paymentAmount > 0) {
-                GovData.payments.unshift({
-                    id: `PAY-${m.id}`,
-                    milestoneId: m.id,
-                    pilotId: m.pilotId,
-                    amount: m.paymentAmount,
-                    status: 'Released',
-                    requestDate: new Date().toISOString().split('T')[0],
-                    approvalDate: new Date().toISOString().split('T')[0],
-                    releaseDate: new Date().toISOString().split('T')[0],
-                    escrowHeld: false
-                });
+        try {
+            if (window.GovApi && dbId) {
+                await GovApi.updateMilestoneStatus(backendPilotId, dbId, nextState);
             }
+        } catch (e) {
+            console.error('Milestone update error:', e);
+            GovUtils.showToast('Failed to sync milestone state to backend.', 'error');
         }
 
         GovData.auditTrail.unshift({
@@ -553,11 +492,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             role: currentUser ? currentUser.role : 'Dept Admin',
             action: 'Milestone Advanced',
             module: 'Milestones',
-            detail: `Advanced milestone ${m.id} (${m.name}) to state: ${nextState}`
+            detail: `Advanced milestone ${mId} to state: ${nextState}`
         });
 
-        renderMilestoneCards(selPilot.value);
-        GovUtils.showToast(`Milestone ${m.id} transitioned to "${nextState}"!`, 'success');
+        await renderMilestoneCards(pId);
+        GovUtils.showToast(`Milestone ${mId} transitioned to "${nextState}"!`, 'success');
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -580,35 +519,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const newId = `MS-${pId}-P${phase}-${Date.now().toString().slice(-4)}`;
 
-        const newMilestone = {
-            id: newId,
-            pilotId: pId,
-            phase: phase,
-            name: name,
-            description: desc,
-            status: 'Pending',
-            dueDate: dueDate,
-            completedDate: null,
-            paymentLinked: amount > 0,
-            paymentAmount: amount,
-            evidenceType: evidence
-        };
-
-        GovData.milestones.push(newMilestone);
-
-        // Add payment escrow record if payment linked
-        if (amount > 0) {
-            GovData.payments.push({
-                id: `PAY-${newId}`,
-                milestoneId: newId,
-                pilotId: pId,
-                amount: amount,
-                status: 'In Escrow',
-                requestDate: null,
-                approvalDate: null,
-                releaseDate: null,
-                escrowHeld: true
-            });
+        try {
+            if (window.GovApi) {
+                const pilot = GovData.pilots.find(item => item.id === pId || item.dbId === pId);
+                const backendPilotId = pilot?.dbId || pId;
+                await GovApi.createMilestone(backendPilotId, {
+                    milestoneCode: newId,
+                    phase: phase,
+                    name: name,
+                    description: desc,
+                    dueDate: dueDate,
+                    paymentAmount: amount,
+                    paymentLinked: amount > 0
+                });
+            }
+        } catch (syncErr) {
+            console.warn('Backend milestone sync notice:', syncErr.message);
         }
 
         GovData.auditTrail.unshift({
@@ -623,23 +549,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         formAddMilestone.reset();
         toggleMilestoneForm(false);
-        renderMilestoneCards(pId);
-
-        // Sync new milestone to backend as a pilot evidence record
-        try {
-            if (window.GovApi) {
-                const pilot = GovData.pilots.find(item => item.id === pId || item.dbId === pId);
-                const backendPilotId = pilot?.dbId || pId;
-                await GovApi.submitPilotEvidence(backendPilotId, {
-                    title: `Phase ${phase}: ${name}`,
-                    description: desc,
-                    evidenceType: evidence || 'milestone_deliverable',
-                    milestoneRef: newId
-                });
-            }
-        } catch (syncErr) {
-            console.warn('Backend milestone sync notice:', syncErr.message);
-        }
+        await renderMilestoneCards(pId);
 
         GovUtils.showToast(`Milestone ${newId} added to Phase ${phase} successfully!`, 'success');
     });

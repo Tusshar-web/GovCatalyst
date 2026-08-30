@@ -6,7 +6,7 @@
 const {
   Pilot, PilotKpi, PilotRisk, PilotIssue,
   PilotFeedback, PilotEvidence, PilotAuditLog,
-  PilotTelemetry, PilotAlert
+  PilotTelemetry, PilotAlert, PilotMilestone
 } = require('../models/pilot.db');
 const pilotService   = require('../services/pilot.service');
 const documentService = require('../services/document.service');
@@ -763,6 +763,93 @@ async function getPilotRecommendations(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// MILESTONES
+// ─────────────────────────────────────────────────────────────────
+async function getMilestones(req, res) {
+  try {
+    const pilot = await resolvePilot(req.params.id);
+    if (!pilot) return formatError(res, 'Pilot not found', 404);
+    const milestones = await PilotMilestone.findByPilot(pilot.id);
+    return formatSuccess(res, milestones, 'Milestones retrieved');
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+async function createMilestone(req, res) {
+  try {
+    const pilot = await resolvePilot(req.params.id);
+    if (!pilot) return formatError(res, 'Pilot not found', 404);
+    
+    const milestone = await PilotMilestone.create({
+      pilotId: pilot.id,
+      ...req.body
+    });
+    
+    await PilotAuditLog.logAction(pilot.id, req.user?.user_id, 'Milestone Created', `Created ${milestone.milestone_code}`);
+    return formatSuccess(res, milestone, 'Milestone created', 201);
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+async function updateMilestoneStatus(req, res) {
+  try {
+    const { milestoneId } = req.params;
+    const { status } = req.body;
+    const completedDate = status === 'Verified' ? new Date().toISOString() : null;
+    
+    const milestone = await PilotMilestone.updateStatus(milestoneId, status, completedDate);
+    if (!milestone) return formatError(res, 'Milestone not found', 404);
+    
+    await PilotAuditLog.logAction(milestone.pilot_id, req.user?.user_id, 'Milestone Updated', `Status changed to ${status}`);
+    return formatSuccess(res, milestone, 'Milestone status updated');
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+async function autoGenerateMilestones(req, res) {
+  try {
+    const pilot = await resolvePilot(req.params.id);
+    if (!pilot) return formatError(res, 'Pilot not found', 404);
+    
+    const existing = await PilotMilestone.findByPilot(pilot.id);
+    if (existing.length > 0) return formatError(res, 'Milestones already exist for this pilot', 400);
+
+    const phases = [
+      { code: 'MS-01', phase: 1, name: 'Setup & Bilateral Agreement', desc: 'Indemnity, legal covenants & baseline scoping', days: 10, pct: 15 },
+      { code: 'MS-02', phase: 2, name: 'Deployment & Telemetry Integration', desc: 'Sensor install, VPC testbed isolation & telemetry', days: 30, pct: 25 },
+      { code: 'MS-03', phase: 3, name: 'Active Sandbox Testing & Execution', desc: 'Field trials, live operational data & mid-term review', days: 60, pct: 30 },
+      { code: 'MS-04', phase: 4, name: 'Final Evaluation, Audit & Transition', desc: 'Committee report, validator sign-off & GeM scale', days: 90, pct: 30 }
+    ];
+
+    const budget = parseFloat(pilot.budget_allocated) || 0;
+    const startDate = new Date(pilot.start_date || Date.now());
+    
+    for (const p of phases) {
+      const dueDate = new Date(startDate.getTime() + p.days * 24 * 60 * 60 * 1000);
+      await PilotMilestone.create({
+        pilotId: pilot.id,
+        milestoneCode: p.code,
+        phase: p.phase,
+        name: p.name,
+        description: p.desc,
+        dueDate: dueDate.toISOString().split('T')[0],
+        paymentAmount: (budget * p.pct) / 100,
+        paymentLinked: true
+      });
+    }
+
+    await PilotAuditLog.logAction(pilot.id, req.user?.user_id, 'Milestones Auto-Generated', 'Standard 4-phase tranches set');
+    const milestones = await PilotMilestone.findByPilot(pilot.id);
+    return formatSuccess(res, milestones, '4-Phase Milestones provisioned successfully', 201);
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
 module.exports = {
   getAllPilots, getPilotById, createPilot,
   updateStatus, evaluatePilot, getCompletionReport,
@@ -782,6 +869,8 @@ module.exports = {
   recordKpiTelemetry, recordBatchTelemetry, getPilotTelemetry,
   getPilotAlerts, acknowledgeAlert,
   // Evaluation & Recommendations
-  getPilotEvaluationReport, getPilotRecommendations
+  getPilotEvaluationReport, getPilotRecommendations,
+  // Milestones
+  getMilestones, createMilestone, updateMilestoneStatus, autoGenerateMilestones
 };
 

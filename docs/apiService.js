@@ -227,6 +227,38 @@ window.GovApi = {
         return this.request(`/api/pilots/${pilotId}/recommendations`);
     },
 
+    async getPilotKpis(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/kpis`);
+    },
+
+    async getPilotEvidences(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/evidences`);
+    },
+
+    async getPilotMilestones(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/milestones`);
+    },
+
+    async createMilestone(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/milestones`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async autoGenerateMilestones(pilotId) {
+        return this.request(`/api/pilots/${pilotId}/milestones/auto`, {
+            method: 'POST'
+        });
+    },
+
+    async updateMilestoneStatus(pilotId, milestoneId, status) {
+        return this.request(`/api/pilots/${pilotId}/milestones/${milestoneId}/status`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+        });
+    },
+
     // --- CHALLENGE CRUD ---
     async getChallengeById(id) {
         return this.request(`/api/challenges/${id}`);

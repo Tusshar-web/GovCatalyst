@@ -494,6 +494,40 @@ const PilotAlert = {
   }
 };
 
+// ─────────────────────────────────────────
+// MILESTONES
+// ─────────────────────────────────────────
+const PilotMilestone = {
+  async create({ pilotId, milestoneCode, phase, name, description, dueDate, paymentAmount, paymentLinked }) {
+    const { rows } = await pool.query(
+      `INSERT INTO gov_pilot_milestones (
+        pilot_id, milestone_code, phase, name, description, due_date, payment_amount, payment_linked, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending')
+      RETURNING *`,
+      [pilotId, milestoneCode, phase || 1, name, description, dueDate, paymentAmount || 0, paymentLinked !== false]
+    );
+    return rows[0];
+  },
+
+  async findByPilot(pilotId) {
+    const { rows } = await pool.query(
+      'SELECT * FROM gov_pilot_milestones WHERE pilot_id = $1 ORDER BY due_date ASC',
+      [pilotId]
+    );
+    return rows;
+  },
+
+  async updateStatus(id, status, completedDate = null) {
+    const { rows } = await pool.query(
+      `UPDATE gov_pilot_milestones 
+       SET status = $1, completed_date = COALESCE($2, completed_date), updated_at = now()
+       WHERE id = $3 RETURNING *`,
+      [status, completedDate, id]
+    );
+    return rows[0];
+  }
+};
+
 module.exports = {
   Pilot,
   PilotKpi,
@@ -503,5 +537,6 @@ module.exports = {
   PilotEvidence,
   PilotAuditLog,
   PilotTelemetry,
-  PilotAlert
+  PilotAlert,
+  PilotMilestone
 };
