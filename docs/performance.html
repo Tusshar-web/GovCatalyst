@@ -19,7 +19,7 @@
     </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance M&E Dashboard — GovCatalyst | महाराष्ट्र शासन</title>
+    <title>Performance M&amp;E Dashboard — GovCatalyst | महाराष्ट्र शासन</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css">
@@ -51,7 +51,7 @@
     <!-- Breadcrumb -->
     <div class="breadcrumb-gov">
         <div class="container">
-            <a href="index.html"><i class="bi bi-house-door-fill me-1"></i> Home</a> › <span class="text-dark fw-semibold">Performance M&E & Telemetry</span>
+            <a href="index.html"><i class="bi bi-house-door-fill me-1"></i> Home</a> › <span class="text-dark fw-semibold">Performance M&amp;E &amp; Telemetry</span>
         </div>
     </div>
 
@@ -62,8 +62,8 @@
             <!-- Page Header -->
             <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                 <div>
-                    <h2><i class="bi bi-speedometer2 text-primary me-2"></i>Performance M&E Telemetry & Real-Time Dashboard</h2>
-                    <p class="mb-0">Multi-source telemetry ingestion, KPI baselines, SLA tracking, automated threshold alerts & evaluation</p>
+                    <h2><i class="bi bi-speedometer2 text-primary me-2"></i>Performance M&amp;E Telemetry &amp; Real-Time Dashboard</h2>
+                    <p class="mb-0">Multi-source telemetry ingestion, KPI baselines, SLA tracking, automated threshold alerts &amp; evaluation</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
                     <button class="btn btn-gold" id="btn-open-ingest-modal">
@@ -78,10 +78,10 @@
                 </div>
             </div>
 
-            <!-- Pilot Selector & Expected Outcome Definition Banner -->
+            <!-- 1. Pilot Selector & Outcome Banner -->
             <div class="gov-card mb-4">
                 <div class="gov-card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-bullseye me-2"></i>1. Defined Pilot Target Outcome & Core Parameters</span>
+                    <span><i class="bi bi-bullseye me-2"></i>1. Defined Pilot Target Outcome &amp; Core Parameters</span>
                     <span class="badge bg-primary" id="badge-pilot-status">PILOT_ACTIVE</span>
                 </div>
                 <div class="gov-card-body">
@@ -96,10 +96,10 @@
                             <div class="p-2 rounded bg-light border d-flex justify-content-around align-items-center">
                                 <div>
                                     <small class="text-muted d-block">Overall Pilot Health</small>
-                                    <span class="fs-4 fw-extrabold text-success" id="val-health-score">94.2%</span>
+                                    <span class="fs-4 fw-extrabold text-success" id="val-health-score">—</span>
                                 </div>
                                 <div>
-                                    <span class="badge bg-success p-2" id="val-health-label">EXCELLENT / ON TRACK</span>
+                                    <span class="badge bg-secondary p-2" id="val-health-label">Loading…</span>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +110,7 @@
                         <i class="bi bi-flag-fill fs-3 text-primary"></i>
                         <div>
                             <strong class="d-block text-navy">Defined Target Outcome Statement (GFR Rule 194):</strong>
-                            <span id="txt-pilot-outcome" class="text-dark">Reduce municipal garbage collection cost by 15% while improving route adherence and citizen grievance resolution time.</span>
+                            <span id="txt-pilot-outcome" class="text-dark">Loading pilot objective…</span>
                         </div>
                     </div>
 
@@ -123,92 +123,26 @@
             <!-- Active Threshold Alerts Feed (Step 6) -->
             <div class="gov-card border-warning mb-4" id="card-alerts-feed">
                 <div class="gov-card-header bg-warning-subtle text-dark d-flex justify-content-between align-items-center">
-                    <span class="fw-bold"><i class="bi bi-bell-fill text-warning me-2"></i>Real-Time Threshold Alerts & Performance Notifications (Step 6)</span>
+                    <span class="fw-bold"><i class="bi bi-bell-fill text-warning me-2"></i>Real-Time Threshold Alerts &amp; Performance Notifications (Step 6)</span>
                     <span class="badge bg-danger" id="badge-alerts-count">0 Active Alerts</span>
                 </div>
                 <div class="gov-card-body p-3">
                     <div id="alerts-container" class="space-y-2">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Milestone Progress & Budget Utilization Row (Step 5) -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <div class="gov-card h-100 mb-0">
-                        <div class="gov-card-header d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-calendar-check me-2"></i>Milestone Delivery Progress</span>
-                            <span class="badge bg-info" id="badge-milestone-ratio">3/4 Completed</span>
-                        </div>
-                        <div class="gov-card-body">
-                            <div class="d-flex justify-content-between small text-muted mb-1">
-                                <span>Execution Phase: <strong>Phase 3 (Operational Field Testing)</strong></span>
-                                <span id="txt-milestone-pct">75% Complete</span>
-                            </div>
-                            <div class="progress mb-3" style="height: 10px;">
-                                <div class="progress-bar bg-success" id="bar-milestones" role="progressbar" style="width: 75%;"></div>
-                            </div>
-                            <ul class="list-group list-group-flush small" id="milestones-preview-list">
-                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
-                                    <span><i class="bi bi-check-circle-fill text-success me-1"></i> MS-1: Baseline Sensor Deployment</span>
-                                    <span class="badge bg-success">Verified</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
-                                    <span><i class="bi bi-check-circle-fill text-success me-1"></i> MS-2: Algorithm Model Calibration</span>
-                                    <span class="badge bg-success">Verified</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
-                                    <span><i class="bi bi-arrow-repeat text-primary me-1"></i> MS-3: Full Division Telemetry Live Run</span>
-                                    <span class="badge bg-primary">In Progress</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="gov-card h-100 mb-0">
-                        <div class="gov-card-header d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-cash-stack me-2"></i>Budget Utilization & Escrow Status</span>
-                            <span class="badge bg-success" id="badge-budget-spent">₹18,50,000 / ₹25,00,000</span>
-                        </div>
-                        <div class="gov-card-body">
-                            <div class="d-flex justify-content-between small text-muted mb-1">
-                                <span>Disbursed via Milestone Verification:</span>
-                                <span id="txt-budget-pct">74% Utilized</span>
-                            </div>
-                            <div class="progress mb-3" style="height: 10px;">
-                                <div class="progress-bar bg-primary" id="bar-budget" role="progressbar" style="width: 74%;"></div>
-                            </div>
-                            <div class="row g-2 text-center">
-                                <div class="col-4">
-                                    <div class="p-2 border rounded bg-light">
-                                        <small class="text-muted d-block">Allocated</small>
-                                        <strong id="val-budget-total">₹25.0 L</strong>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="p-2 border rounded bg-light">
-                                        <small class="text-muted d-block">Released</small>
-                                        <strong class="text-success" id="val-budget-released">₹18.5 L</strong>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="p-2 border rounded bg-light">
-                                        <small class="text-muted d-block">Escrow Retained</small>
-                                        <strong class="text-warning" id="val-budget-escrow">₹6.5 L</strong>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="text-center text-muted py-3">
+                            <div class="spinner-border spinner-border-sm text-warning me-2"></div>Loading alerts…
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- KPI Cards Grid (Baseline vs Target vs Actual with RAG Indicators) (Steps 2, 3, 5) -->
+            <!-- Milestone Progress & Budget Utilization Row (Step 5) — populated by JS -->
+            <div class="row g-3 mb-4" id="milestones-budget-row">
+                <!-- Populated dynamically by JS from real backend data -->
+            </div>
+
+            <!-- KPI Cards Grid (Steps 2, 3, 5) -->
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-navy mb-0"><i class="bi bi-bar-chart-steps me-2"></i>2 & 3. Key Performance Indicators (Baseline, Target, Actual & RAG Health)</h5>
+                <h5 class="fw-bold text-navy mb-0"><i class="bi bi-bar-chart-steps me-2"></i>2 &amp; 3. Key Performance Indicators (Baseline, Target, Actual &amp; RAG Health)</h5>
                 <div class="d-flex gap-2">
                     <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Green: On Track</span>
                     <span class="badge bg-warning text-dark"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i> Yellow: At Risk</span>
@@ -223,10 +157,8 @@
             <!-- Telemetry Logs & Ingestion Provenance Feed (Step 4) -->
             <div class="gov-card mb-4">
                 <div class="gov-card-header d-flex justify-content-between align-items-center">
-                    <span class="fw-bold"><i class="bi bi-hdd-network me-2"></i>4. Telemetry Ingestion History with Data Source Provenance & Timestamps</span>
-                    <button class="btn btn-sm btn-outline-light" id="btn-stream-iot">
-                        <i class="bi bi-broadcast me-1"></i> Simulate IoT Stream
-                    </button>
+                    <span class="fw-bold"><i class="bi bi-hdd-network me-2"></i>4. Telemetry Ingestion History with Data Source Provenance &amp; Timestamps</span>
+                    <span class="badge bg-secondary py-1"><i class="bi bi-broadcast me-1"></i>Live Data · Auto-Refreshes on Ingest</span>
                 </div>
                 <div class="gov-card-body p-0">
                     <div class="table-responsive">
@@ -250,7 +182,7 @@
                 </div>
             </div>
 
-            <!-- Supporting Evidence & Independent Validation Sign-off (Steps 7 & 9) -->
+            <!-- Supporting Evidence & Independent Validation (Steps 7 & 9) -->
             <div class="row g-3 mb-4">
                 <div class="col-md-7">
                     <div class="gov-card h-100 mb-0">
@@ -268,6 +200,7 @@
                                             <th>Mapped KPI / MS</th>
                                             <th>Date</th>
                                             <th>Status</th>
+                                            <th>Proof</th>
                                         </tr>
                                     </thead>
                                     <tbody id="evidence-tbody">
@@ -289,11 +222,11 @@
                             <p class="small text-muted mb-2">Evaluator attests evidence veracity before scale-up clearance:</p>
                             <div class="p-3 bg-light rounded border mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong class="text-navy" id="val-validator-name">Smt. Kavita Deshmukh</strong>
+                                    <strong class="text-navy" id="val-validator-name">Independent Validator</strong>
                                     <span class="badge bg-success" id="val-validation-verdict">VERIFIED</span>
                                 </div>
                                 <div class="small text-muted" id="val-validator-notes">
-                                    "Field GPS logs and invoice reconciliation confirm 16.2% operational cost reduction without service interruption. GFR 194 compliance met."
+                                    Validator will attest all submitted evidence for GFR Rule 194 compliance before scale-up clearance is granted.
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
@@ -310,14 +243,14 @@
             <div class="gov-card gold-top mb-4">
                 <div class="gov-card-header d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-signpost-split me-2"></i>10. Automated Procurement Transition Recommendation</span>
-                    <span class="badge bg-success fs-6" id="badge-recommendation">SCALE → Direct Procurement</span>
+                    <span class="badge bg-secondary fs-6" id="badge-recommendation">Computing…</span>
                 </div>
                 <div class="gov-card-body">
                     <div class="row align-items-center">
                         <div class="col-md-8">
-                            <h6 class="fw-bold text-navy mb-1" id="txt-recommendation-title">Recommendation: Proceed to Commercial Scale-up & GFR 194 Direct Procurement</h6>
+                            <h6 class="fw-bold text-navy mb-1" id="txt-recommendation-title">Loading recommendation from backend…</h6>
                             <p class="text-muted small mb-0" id="txt-recommendation-reason">
-                                All 3 primary KPIs reached target thresholds with 94.2% overall health index, zero unresolved critical risks, and verified evidence clearance.
+                                Recommendation is computed from real KPI achievement data in the database.
                             </p>
                         </div>
                         <div class="col-md-4 text-end">
@@ -337,7 +270,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-navy text-white">
-                    <h5 class="modal-title" id="modalIngestTelemetryLabel"><i class="bi bi-broadcast me-2"></i>Connect & Ingest Telemetry Data (Step 4)</h5>
+                    <h5 class="modal-title" id="modalIngestTelemetryLabel"><i class="bi bi-broadcast me-2"></i>Connect &amp; Ingest Telemetry Data (Step 4)</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -345,7 +278,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Target KPI Metric <span class="text-danger">*</span></label>
                             <select class="form-select" id="inp-ingest-kpi" required>
-                                <!-- Populated dynamically -->
+                                <!-- Populated dynamically from DB -->
                             </select>
                         </div>
 
@@ -367,7 +300,7 @@
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-semibold">Measurement Unit</label>
-                                <input type="text" class="form-control" id="inp-ingest-unit" readonly value="lakh/month">
+                                <input type="text" class="form-control" id="inp-ingest-unit" readonly>
                             </div>
                         </div>
 
@@ -400,7 +333,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" id="report-modal-body">
-                    <!-- Injected dynamically -->
+                    <!-- Injected dynamically from backend -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -422,7 +355,7 @@
                     <form id="form-upload-evidence">
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Evidence Name / Title <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="inp-ev-name" placeholder="e.g. Monthly Fuel Invoices & Fuel Dispenser Logs" required>
+                            <input type="text" class="form-control" id="inp-ev-name" placeholder="e.g. Monthly Fuel Invoices &amp; Dispenser Logs" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Document Type <span class="text-danger">*</span></label>
@@ -436,11 +369,18 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Related KPI / Milestone</label>
-                            <input type="text" class="form-control" id="inp-ev-kpi" placeholder="e.g. KPI-001 / Fuel Consumption">
+                            <select class="form-select" id="inp-ev-kpi">
+                                <option value="Core KPI Matrix">Core KPI Matrix (General)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Upload Proof Document <span class="text-muted small">(PDF, Image, ZIP, CSV)</span></label>
+                            <input type="file" class="form-control" id="inp-ev-file" accept=".pdf,.zip,.json,.png,.csv,.txt,.docx,.xlsx,.jpg,.jpeg">
+                            <div class="form-text text-muted" style="font-size: 11px;">Optional: attach supporting file. Max 10 MB.</div>
                         </div>
                         <div class="modal-footer px-0 pb-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-gov"><i class="bi bi-save me-1"></i> Attach to Evidence Ledger</button>
+                            <button type="submit" class="btn btn-gov"><i class="bi bi-cloud-arrow-up me-1"></i> Submit Evidence</button>
                         </div>
                     </form>
                 </div>
@@ -460,14 +400,14 @@
                 <div class="col-md-4 mb-3">
                     <h5>Quick Links</h5>
                     <ul>
-                        <li><a href="performance.html">Performance M&E</a></li>
+                        <li><a href="performance.html">Performance M&amp;E</a></li>
                         <li><a href="payments.html">Payment Release</a></li>
                         <li><a href="scaleup.html">Scale-up Transition</a></li>
                         <li><a href="admin.html">Governance Audit</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <h5>M&E Standards</h5>
+                    <h5>M&amp;E Standards</h5>
                     <p style="font-size:13px;">Automated Telemetry Audit Logs</p>
                     <p style="font-size:13px;">Objective Outcome Threshold Verification (GFR Rule 194)</p>
                 </div>
