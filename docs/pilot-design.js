@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (e) {
                 console.log('Live challenges fetch notice:', e.message);
             }
+        } // end if (window.GovApi)
 
         if (inpPilotChallenge) {
             inpPilotChallenge.innerHTML = '<option value="">-- Select Challenge --</option>' + 
@@ -347,7 +348,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     createdPilot = res.data;
                 }
             } catch (apiErr) {
-                console.log('Live pilot creation API notice:', apiErr.message);
+                console.warn('Live pilot creation API error:', apiErr.message);
+                GovUtils.showToast(apiErr.message || 'Failed to provision sandbox. Please try again.', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+                return; // Stop execution, don't create dummy local pilot
             }
         }
 
