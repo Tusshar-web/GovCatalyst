@@ -250,6 +250,13 @@ window.GovApi = {
         return this.request(`/api/pilots/${pilotId}/evidences`);
     },
 
+    async addPilotEvidence(pilotId, data) {
+        return this.request(`/api/pilots/${pilotId}/evidences`, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
     async getPilotMilestones(pilotId) {
         return this.request(`/api/pilots/${pilotId}/milestones`);
     },

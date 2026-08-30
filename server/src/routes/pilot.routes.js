@@ -70,7 +70,7 @@ router.get('/:id/recommendations',                   ctrl.getPilotRecommendation
 router.get( '/:id/milestones',                       ctrl.getMilestones);
 router.post('/:id/milestones',                       requireRole('dept_admin', 'super_admin'), ctrl.createMilestone);
 router.post('/:id/milestones/auto',                  requireRole('dept_admin', 'super_admin'), ctrl.autoGenerateMilestones);
-router.patch('/:id/milestones/:milestoneId/status',  requireRole('dept_admin', 'super_admin', 'validator'), ctrl.updateMilestoneStatus);
+router.patch('/:id/milestones/:milestoneId/status',  requireRole('dept_admin', 'super_admin', 'validator', 'startup'), ctrl.updateMilestoneStatus);
 
 module.exports = router;
 

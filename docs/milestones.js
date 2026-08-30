@@ -440,9 +440,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                             let nextActionBtn = '';
                             if (m.status === 'Pending') {
-                                nextActionBtn = `<button class="btn btn-sm btn-outline-primary btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="In Progress"><i class="bi bi-play-circle me-1"></i> Start Execution</button>`;
+                                nextActionBtn = `<button class="btn btn-sm btn-outline-primary btn-start-exec" data-dbid="${m.dbId}" data-id="${m.id}"><i class="bi bi-play-circle me-1"></i> Start Execution</button>`;
                             } else if (m.status === 'In Progress') {
-                                nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-advance" data-dbid="${m.dbId}" data-id="${m.id}" data-next="Under Review"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
+                                const escapedName = (m.name || '').replace(/"/g, '&quot;');
+                                const escapedEv = (m.evidenceType || 'System Audit Logs / Telemetry').replace(/"/g, '&quot;');
+                                nextActionBtn = `<button class="btn btn-sm btn-outline-warning btn-submit-deliv" data-dbid="${m.dbId}" data-id="${m.id}" data-phase="${m.phase || ph.id}" data-name="${escapedName}" data-evidence="${escapedEv}" data-amount="${m.paymentAmount}"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable</button>`;
                             } else if (m.status === 'Under Review') {
                                 nextActionBtn = `<button class="btn btn-sm btn-success btn-advance-verify" data-dbid="${m.dbId}" data-id="${m.id}" data-amount="${m.paymentAmount}" data-next="Verified"><i class="bi bi-shield-fill-check me-1"></i> Verify &amp; Disburse</button>`;
                             } else {
@@ -491,17 +493,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         cardsContainer.innerHTML = html;
 
-        // Bind regular advance buttons (Pending → In Progress, In Progress → Under Review)
-        document.querySelectorAll('.btn-advance').forEach(btn => {
+        // 1. Bind "Start Execution" buttons (Pending → In Progress)
+        document.querySelectorAll('.btn-start-exec').forEach(btn => {
             btn?.addEventListener('click', () => {
                 const mId = btn.dataset.id;
                 const dbId = btn.dataset.dbid;
-                const nextState = btn.dataset.next;
-                advanceMilestoneState(mId, dbId, nextState);
+                startMilestoneExecution(mId, dbId, btn);
             });
         });
 
-        // Bind Verify & Disburse buttons — require confirmation before irreversible escrow payout
+        // 2. Bind "Submit Deliverable" buttons (In Progress → Deliverable Submission Modal → Under Review)
+        document.querySelectorAll('.btn-submit-deliv').forEach(btn => {
+            btn?.addEventListener('click', () => {
+                const mId = btn.dataset.id;
+                const dbId = btn.dataset.dbid;
+                const phase = btn.dataset.phase || '1';
+                const name = btn.dataset.name || 'Deliverable';
+                const evidence = btn.dataset.evidence || '';
+                const amount = parseFloat(btn.dataset.amount) || 0;
+                openSubmitDeliverableModal(mId, dbId, phase, name, evidence, amount);
+            });
+        });
+
+        // 3. Bind "Verify & Disburse" buttons — requires confirmation before irreversible escrow payout
         document.querySelectorAll('.btn-advance-verify').forEach(btn => {
             btn?.addEventListener('click', () => {
                 const mId = btn.dataset.id;
@@ -546,6 +560,167 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 5. START MILESTONE EXECUTION
+    // ─────────────────────────────────────────────────────────────
+    async function startMilestoneExecution(mId, dbId, btn) {
+        const pId = selPilot.value;
+        const p = GovData.pilots.find(item => item.dbId === pId || item.id === pId);
+        const backendPilotId = p?.dbId || pId;
+
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Starting...';
+        }
+
+        try {
+            if (window.GovApi && dbId) {
+                await GovApi.updateMilestoneStatus(backendPilotId, dbId, 'In Progress');
+            }
+
+            GovData.auditTrail.unshift({
+                id: GovData.auditTrail.length + 1,
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                user: (currentUser && currentUser.name) || 'Authorized Officer',
+                role: (currentUser && currentUser.role) || 'Startup',
+                action: 'Milestone Execution Started',
+                module: 'Milestones',
+                detail: `Started active execution for milestone ${mId} (Status: In Progress)`
+            });
+
+            GovUtils.showToast(`Milestone ${mId} is now In Progress! Sandbox trial testing is active.`, 'success');
+            await renderMilestoneCards(pId);
+        } catch (e) {
+            console.error('Milestone start error:', e);
+            GovUtils.showToast('Failed to start execution: ' + (e.message || 'Server error'), 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 6. DELIVERABLE SUBMISSION MODAL
+    // ─────────────────────────────────────────────────────────────
+    function openSubmitDeliverableModal(mId, dbId, phase, milestoneName, evidenceType, dueAmount) {
+        const pId = selPilot.value;
+        const p = GovData.pilots.find(item => item.dbId === pId || item.id === pId);
+        
+        const content = `
+            <div class="p-1">
+                <div class="alert alert-primary d-flex align-items-center mb-3">
+                    <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+                    <div>
+                        <strong>Phase ${phase}: ${milestoneName}</strong>
+                        <div class="small text-muted">Target Evidence: <strong>${evidenceType || 'System Audit Logs / Telemetry'}</strong></div>
+                    </div>
+                </div>
+
+                <form id="form-submit-deliverable" onsubmit="return false;">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-navy">Deliverable Title / Summary <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="inp-deliv-title" placeholder="e.g. Phase ${phase} Execution Artifacts & Accuracy Test Log" value="${milestoneName} — Completion Artifact" required>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-navy">Evidence Category</label>
+                            <select class="form-select" id="inp-deliv-type">
+                                <option value="Telemetry Dataset">Telemetry Dataset & Metrics</option>
+                                <option value="Audit Report">Independent Audit / CERT-In Report</option>
+                                <option value="Code Repository">Code Repository / Release Artifact</option>
+                                <option value="Deployment Certificate">Deployment Sign-off Certificate</option>
+                                <option value="Field Trial Log">Field Trial Run Log</option>
+                                <option value="Security Verification">Security Compliance Report</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-navy">Evidence Document / Repository Link <span class="text-danger">*</span></label>
+                            <input type="url" class="form-control font-monospace small" id="inp-deliv-url" placeholder="https://..." value="https://sandbox.maharashtra.gov.in/evidence/${mId.toLowerCase()}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-navy">Execution Notes & Verification Summary</label>
+                        <textarea class="form-control" id="inp-deliv-notes" rows="3" placeholder="Describe the deliverables completed, telemetry benchmarks achieved, and how requirements were met..."></textarea>
+                    </div>
+
+                    ${dueAmount > 0 ? `
+                    <div class="p-2 mb-3 bg-light rounded border d-flex justify-content-between align-items-center">
+                        <span class="small text-muted"><i class="bi bi-cash-stack text-success me-1"></i> Associated Escrow Tranche:</span>
+                        <strong class="text-navy">${GovUtils.formatCurrency(dueAmount)}</strong>
+                    </div>` : ''}
+
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="GovUtils.closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-gold btn-sm" id="btn-confirm-submit-deliverable">
+                            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable for Review
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        GovUtils.openModal(`Submit Deliverable — ${mId}`, content);
+
+        const form = document.getElementById('form-submit-deliverable');
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('btn-confirm-submit-deliverable');
+            const title = document.getElementById('inp-deliv-title')?.value.trim();
+            const docType = document.getElementById('inp-deliv-type')?.value;
+            const url = document.getElementById('inp-deliv-url')?.value.trim();
+            const notes = document.getElementById('inp-deliv-notes')?.value.trim();
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting Evidence...';
+            }
+
+            const backendPilotId = p?.dbId || pId;
+            try {
+                if (window.GovApi) {
+                    // 1. Record evidence in gov_pilot_evidences
+                    await GovApi.addPilotEvidence(backendPilotId, {
+                        evidenceCode: `EV-${mId}-${Date.now().toString().slice(-4)}`,
+                        name: title || `${mId} Deliverable Proof`,
+                        documentType: docType || 'Deliverable',
+                        fileUrl: url || null,
+                        relatedMilestone: mId,
+                        notes: notes || null,
+                        uploadedBy: (currentUser && currentUser.name) || 'Startup Innovator'
+                    }).catch(err => console.warn('Evidence record notice:', err.message));
+
+                    // 2. Advance milestone state to 'Under Review'
+                    await GovApi.updateMilestoneStatus(backendPilotId, dbId, 'Under Review');
+                }
+
+                GovData.auditTrail.unshift({
+                    id: GovData.auditTrail.length + 1,
+                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                    user: (currentUser && currentUser.name) || 'Startup Innovator',
+                    role: (currentUser && currentUser.role) || 'Startup',
+                    action: 'Deliverable Submitted',
+                    module: 'Milestones',
+                    detail: `Submitted deliverable for ${mId} (${title}): Transitioned to Under Review`
+                });
+
+                GovUtils.closeModal();
+                GovUtils.showToast(`Deliverable for ${mId} submitted! Placed Under Review for Department Admin / Validator sign-off.`, 'success');
+                await renderMilestoneCards(pId);
+            } catch (err) {
+                console.error('Deliverable submit error:', err);
+                GovUtils.showToast('Failed to submit deliverable: ' + (err.message || 'Server error'), 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Deliverable for Review';
+                }
+            }
+        });
+    }
+
     window.openAddModalForPhase = function(phId) {
         const phaseSelect = document.getElementById('inp-ms-phase');
         if (phaseSelect) phaseSelect.value = phId;
@@ -553,7 +728,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // ─────────────────────────────────────────────────────────────
-    // 5. STATE MACHINE ADVANCE LOGIC
+    // 7. GENERIC STATE MACHINE ADVANCE LOGIC (e.g. Verify & Disburse)
     // ─────────────────────────────────────────────────────────────
     async function advanceMilestoneState(mId, dbId, nextState) {
         const pId = selPilot.value;
