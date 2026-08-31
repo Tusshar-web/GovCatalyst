@@ -172,7 +172,7 @@ window.GovApi = {
     async getAiStartupMatches(challengeId) {
         return this.request('/api/startups/ai-match', {
             method: 'POST',
-            body: { challenge_id: challengeId }
+            body: JSON.stringify({ challenge_id: challengeId })
         });
     },
 

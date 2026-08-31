@@ -1,0 +1,242 @@
+================================================================================
+🏛️ GOVCATALYST HACKATHON DEMO WALKTHROUGH & CONTEXT GUIDE 🏛️
+================================================================================
+This document contains the step-by-step script, roles, and exact copy-paste data
+to showcase GovCatalyst (SIH Problem Statement 26136) during the live demo.
+It outlines the 10-Step Innovation Procurement Lifecycle under GFR Rule 194.
+
+--------------------------------------------------------------------------------
+👥 DEMO ROLES & LOGIN CREDENTIALS
+--------------------------------------------------------------------------------
+Use these default credentials to log in during the various phases of the demo.
+
+1. Super Admin (Governance & Registration Approver)
+   - Email: superadmin@govcatalyst.com
+   - Password: adminpassword123
+
+2. Government Department Admin (NHAI Representative)
+   - Email: nhai.officer@gov.in
+   - Password: Password@123
+
+3. Startup Founder (InspectAI Technologies Representative)
+   - Email: director@inspectai.tech
+   - Password: Password@123
+
+4. Independent Validator (CSIR-CRRI Scientist / Auditor)
+   - Email: validator@govcatalyst.com
+   - Password: Password@123
+
+--------------------------------------------------------------------------------
+📋 SCENARIO PREMISE & CHALLENGE DETAIL
+--------------------------------------------------------------------------------
+The National Highways Authority of India (NHAI) needs to transition from manual,
+high-risk, slow, and expensive concrete bridge structural inspections to an 
+automated UAV/Drone & Computer Vision inspection process. 
+
+Under India's General Financial Rules (GFR) Rule 194, NHAI will define outcome-based
+targets, select a DPIIT-recognized startup, run an outcome-based sandbox pilot, 
+and transition it to a direct scale-up contract on GeM without traditional 
+turnover and experience requirements.
+
+================================================================================
+🚀 STEP-BY-STEP LIVE DEMO FLOW & COPY-PASTE DATA
+================================================================================
+
+--------------------------------------------------------------------------------
+PHASE 1: GOVERNMENT DEPARTMENT REGISTER & LOGIN
+--------------------------------------------------------------------------------
+[ACTION]: Show the department registration flow, then log in.
+
+1. Go to the Landing Page / SSO Login Modal.
+2. Register the Department Admin:
+   - Representative Name: Shri Sanjay Malhotra
+   - Designation: Chief General Manager (Tech)
+   - Email Address: nhai.officer@gov.in
+   - Department Name: National Highways Authority of India (NHAI)
+   - Password: Password@123
+3. [EXPLANATION]: Explain that government account requests enter a "Pending Approval"
+   state to ensure proper security.
+4. Log in as Super Admin (superadmin@govcatalyst.com / adminpassword123).
+5. Go to the Admin Dashboard (admin.html), approve Shri Sanjay Malhotra, and 
+   enter the OTP verification code sent to the email (simulated on screen).
+6. Log out of Super Admin, and log in as the newly activated NHAI Department Admin:
+   - Email: nhai.officer@gov.in
+   - Password: Password@123
+
+--------------------------------------------------------------------------------
+PHASE 2: CHALLENGE DEFINITION & AI OUTCOME STATEMENT REWRITING
+--------------------------------------------------------------------------------
+[ACTION]: Define the UAV bridge inspection challenge using the AI Rewriter.
+
+1. Navigate to "Challenges" (challenges.html) and click "Create New Challenge".
+2. Input the following details:
+   - Sector: AI/ML
+   - Budget Ceiling (INR): 4500000  (₹45 Lakhs)
+   - Pilot Duration (Days): 90
+   - Risk Level: Medium
+   - Raw Problem Statement (COPY-PASTE):
+     ---------------------------------------------------------------------------
+     We need to inspect concrete bridge structures on National Highway routes for 
+     cracks, spalling, and rebar corrosion. Manual inspection requires traffic 
+     stops, scaffolding, is slow (15+ days), and is highly subjective. We want an 
+     automated drone/UAV scanning system that can detect defects and map them 
+     in near-real-time.
+     ---------------------------------------------------------------------------
+
+3. Click the "AI Draft Outcome Statement" button (Gemini integration).
+4. View the AI-generated GFR-compliant Outcomes and KPIs:
+   - AI Outcome Statement:
+     ---------------------------------------------------------------------------
+     Detect concrete structural cracks >= 0.2mm, spalling, and corrosion with 
+     >= 90% defect detection accuracy using automated quadcopter flights, 
+     reducing manual inspection time by 80% and generating GFR-compliant 
+     evaluation reports within 48 hours.
+     ---------------------------------------------------------------------------
+   - AI-Generated Tech Tags: AI/ML, Computer Vision, Drone Inspection, Infrastructure
+5. Click "Publish Challenge". The challenge is now live in the startup registry!
+
+--------------------------------------------------------------------------------
+PHASE 3: STARTUP REGISTRATION & GFR 194 COMPLIANCE SETUP
+--------------------------------------------------------------------------------
+[ACTION]: Show a startup registering with DPIIT credentials to bypass traditional
+experience barriers.
+
+1. Navigate to the SSO Login Modal and select the "Startup Registration" tab.
+2. Input the following details (COPY-PASTE):
+   - Representative Name: Dr. Anil Patil
+   - Company Name: InspectAI Technologies Pvt Ltd
+   - Email Address: director@inspectai.tech
+   - DPIIT Recognition Number: DIPP98765
+   - Sector: AI / ML
+   - Create Password: Password@123
+3. Click "Register & Instant Portal Access".
+4. [EXPLANATION]: Explain that DPIIT-registered startups get instant portal 
+   access. The system validates the DIPP98765 registry ID to automatically 
+   relax the standard 3-year turnover and experience procurement barriers 
+   under GFR Rule 194.
+5. Go to the Startup Profile Dashboard (startups.html) and complete the profile details:
+   - Stage: Growth
+   - Founded Year: 2024
+   - Team Size: 24
+   - Website URL: https://inspectai.tech
+   - Founders: Dr. Anil Patil, Ms. Priya Gokhale
+   - City: Pune
+   - Tech Tags (COPY-PASTE): AI/ML, Computer Vision, Drone Inspection, IoT, Infrastructure
+   - Pitch Summary (COPY-PASTE):
+     ---------------------------------------------------------------------------
+     Automated drone and computer-vision powered highway and bridge structural 
+     health inspection with 92% defect detection accuracy. Uses real-time edge 
+     intelligence to map sub-millimeter concrete cracks.
+     ---------------------------------------------------------------------------
+   - Past Turnover (INR): 3500000 (₹35 Lakhs)
+   - Past Pilots Count: 2
+   - GeM Registered: No
+6. Click "Save Profile".
+
+--------------------------------------------------------------------------------
+PHASE 4: STARTUP PROPOSAL SUBMISSION & AI SCREENING
+--------------------------------------------------------------------------------
+[ACTION]: Show the startup applying to the challenge, and GovCatalyst automatically 
+running the AI-powered pre-screening.
+
+1. While logged in as director@inspectai.tech, go to "Challenges" (challenges.html).
+2. Select the published "Automated UAV Bridge Inspection & Defect Mapping" challenge.
+3. Click "Apply to Challenge" and input the proposal details:
+   - Proposal Summary (COPY-PASTE):
+     ---------------------------------------------------------------------------
+     Deploy autonomous drone sweeps utilizing edge-AI computer vision algorithms 
+     to detect cracks, concrete spalling, and steel reinforcement corrosion. 
+     Results are loaded in real-time to the telemetry engine via IoT payloads 
+     and mapped on an interactive GIS map. Meets all Indian Data Sovereignty laws.
+     ---------------------------------------------------------------------------
+4. Click "Submit Application".
+5. [EXPLANATION]: Explain that the system instantly triggers the Google Gemini AI 
+   Screening Engine. Gemini reads the startup's profile + proposal, maps it 
+   against NHAI's published challenge outcomes, and outputs a match score.
+6. The AI scores the proposal at 89% (which is >= 75% threshold), automatically 
+   updating its status to "Shortlisted" for review by NHAI!
+
+--------------------------------------------------------------------------------
+PHASE 5: SANDBOX PILOT SETUP & 14-POINT CYBERSECURITY GATING
+--------------------------------------------------------------------------------
+[ACTION]: The Department Admin sets up the pilot parameters and clears the 
+regulatory/cyber gates.
+
+1. Log back in as NHAI Department Admin (nhai.officer@gov.in).
+2. Go to "Pilot Sandbox Builder" (pilot-design.html).
+3. Find the shortlisted bid from InspectAI Technologies and click "Initiate Pilot".
+4. Enter Sandbox Pilot configuration:
+   - Name: UAV Bridge Structural Health Pilot - NH 4 Corridor (Pune-Satara)
+   - Location: Pune-Satara Highway Corridor (NH 4, Bridges 12 to 18)
+   - Scope Included: Crack detection >= 0.2mm, concrete spalling volume, rebar rust index.
+   - Scope Excluded: Railway overbridges, sub-surface scanning.
+   - Smart Escrow Budget: ₹35,00,000 (INR 3.5 Million).
+5. Define the Regulatory Rules (Sovereignty & IP Rules):
+   - Data Residency: All UAV imagery and structural telemetry stored in National Data Center.
+   - IP Ownership: Startup retains all IP; NHAI obtains non-exclusive perpetual license.
+6. Run the 14-point Cybersecurity Checklist. Explain that the sandbox cannot 
+   transition to an active state until the cyber checklist is validated (e.g., TLS 1.3 
+   encryption, client-side data isolation, firmware signature verifications).
+7. Save and sign the Bilateral Agreement. This transitions the pilot status to "Security Check passed".
+
+--------------------------------------------------------------------------------
+PHASE 6: TELEMETRY TELE-METERING, SLA BREACH & SMART ESCROW SUSPENSION
+--------------------------------------------------------------------------------
+[ACTION]: Demonstrate GovCatalyst's live tracking dashboard and how it dynamically
+manages risks using telemetry and payment triggers.
+
+1. Navigate to the Performance Dashboard (performance.html).
+2. [EXPLANATION]: Under GFR 194, pilots must track real-time outcomes. If performance 
+   drops below safety levels, the system must trigger alerts and freeze payments.
+3. Simulate Telemetry Ingest (using the dashboard inputs or uploading a CSV):
+   - Ingest 1 (Healthy):
+     * Crack Detection Accuracy: 94%
+     * System status indicates: 🟢 Green (On Track)
+   - Ingest 2 (SLA Breach Simulation):
+     * Crack Detection Accuracy: 78% (below the 82% minimum tolerance limit)
+     * System status indicates: 🔴 Red (Behind Target)
+4. Show the system reactions:
+   - An SLA Breach Alert is logged in the Audit Trail.
+   - An email notification is sent to both the NHAI Officer and Startup Team.
+   - **Crucial Feature**: The Escrow Payment release for Milestone 2 is automatically 
+     Suspended (Locked) to protect public funds.
+5. Ingest 3 (Correction Simulation):
+   - Upload new telemetry with updated parameters:
+     * Crack Detection Accuracy: 92%
+     * System status indicates: 🟢 Green (Restored)
+   - Escrow lock is automatically released, restoring pilot milestone payments!
+
+--------------------------------------------------------------------------------
+PHASE 7: THIRD-PARTY AUDIT & SCALE-UP TRANSITION (FORM 194-E)
+--------------------------------------------------------------------------------
+[ACTION]: Independent verification, generating the official compliance certificate, 
+and transitioning to the Government e-Marketplace (GeM) portal.
+
+1. Log in as the Validator (validator@govcatalyst.com / Password@123).
+2. Go to "Milestone Verifications" (milestones.html).
+3. Review the uploaded drone inspection evidence and telemetry audit trails (Section 65B 
+   Evidence Act compliant).
+4. Click "Approve Evidence" and submit the Final Validation Report indicating 
+   an overall success score of 91% (meeting the 85% requirement for scale-up).
+5. Log back in as NHAI Admin (nhai.officer@gov.in) and go to "Scale-up Transition" (scaleup.html).
+6. Click "Generate Form 194-E".
+7. [EXPLANATION]: Explain that Form 194-E is the official regulatory certificate 
+   under GFR Rule 194. It compiles pilot outcomes, validator approvals, and 
+   financial audits, providing legal clearance to bypass public tenders.
+8. View/Print the beautiful, PDF-friendly Form 194-E Certificate containing 
+   the Ashoka emblem, official seals, and signatures.
+9. Click the "Direct GeM Transition Routing" button to automatically draft 
+   and send the direct procurement contract parameters to the GeM portal!
+
+================================================================================
+💡 KEY HACKATHON WOW-POINTS FOR JUDGES
+================================================================================
+* GFR Rule 194 Compliance: The platform is built specifically to bridge the gap 
+  between government tender rules and startup innovations.
+* Section 65B Evidence Act Audit Trail: Showcases immutable audit logs for every 
+  telemetry reading, state change, and validator decision.
+* Google Gemini AI Integration: Drafts GFR outcome metrics from vague user input 
+  and screens proposals against those outcomes automatically.
+* Escrow-Lock on SLA Breach: Connects IoT/sensor data directly to financial security, 
+  protecting government funds in real-time.
+================================================================================
