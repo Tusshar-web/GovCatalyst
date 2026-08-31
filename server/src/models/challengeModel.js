@@ -100,6 +100,11 @@ const Challenge = {
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
+
+  async deleteById(id) {
+    const { rowCount } = await pool.query('DELETE FROM challenges WHERE id = $1', [id]);
+    return rowCount > 0;
+  }
 };
 
 module.exports = Challenge;

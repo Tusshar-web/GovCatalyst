@@ -21,6 +21,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchAudit = document.getElementById('search-audit');
     const filterAuditModule = document.getElementById('filter-audit-module');
 
+    // RBAC check on Admin Page UI
+    const currentUser = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser()) || null;
+    const normRole = currentUser && currentUser.role ? currentUser.role.toLowerCase().replace(/[\s-]/g, '_') : '';
+
+    // Only super_admin can manually provision users or manage the pending verification queue
+    if (normRole !== 'super_admin') {
+        if (btnToggleAddUser) btnToggleAddUser.style.display = 'none';
+        const pendingTabBtn = document.querySelector('#admin-tabs [data-tab="tab-pending-users"]');
+        if (pendingTabBtn) pendingTabBtn.parentElement.style.display = 'none';
+    }
+
+    // Default tab navigation for Validator
+    if (normRole === 'validator') {
+        const signoffsTabBtn = document.querySelector('#admin-tabs [data-tab="tab-signoffs"]');
+        if (signoffsTabBtn) {
+            setTimeout(() => signoffsTabBtn.click(), 50);
+        }
+    }
+
     // Tabs switching
     document.querySelectorAll('#admin-tabs .nav-link').forEach(btn => {
         btn?.addEventListener('click', () => {
@@ -31,10 +50,18 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-content-pane').forEach(p => p.style.display = 'none');
             const target = document.getElementById(tabId);
             if (target) target.style.display = 'block';
+
+            if (tabId === 'tab-pending-users') {
+                renderPendingRegistrations();
+            }
         });
     });
 
     function toggleAddUser(show) {
+        if (normRole !== 'super_admin') {
+            GovUtils.showToast('Access Denied: Only Super Admin can provision system users.', 'error');
+            return;
+        }
         cardAddUser.style.display = show ? 'block' : 'none';
         if (show) cardAddUser.scrollIntoView({ behavior: 'smooth' });
     }
@@ -59,10 +86,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const badgePendingCount = document.getElementById('badge-pending-count');
 
     // Render Pending Government Registrations
-    function renderPendingRegistrations() {
+    async function renderPendingRegistrations() {
         if (!pendingUsersTbody) return;
 
-        const pendingList = GovData.pendingRegistrations || [];
+        let pendingList = GovData.pendingRegistrations || [];
+
+        // Fetch live pending users from PostgreSQL backend
+        if (window.GovApi) {
+            try {
+                const res = await GovApi.getPendingUsers();
+                if (res && res.success && Array.isArray(res.users) && res.users.length > 0) {
+                    const dbUsers = res.users.map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        email: u.email,
+                        role: u.role === 'dept_admin' ? 'Dept Admin' : u.role === 'evaluator' ? 'Evaluator' : u.role === 'validator' ? 'Validator' : u.role,
+                        department: u.department_name || 'Government Department',
+                        designation: u.designation || 'Official',
+                        appliedAt: u.created_at ? new Date(u.created_at).toISOString().slice(0, 16).replace('T', ' ') : 'Just now',
+                        status: u.account_status === 'approved' ? 'approved_awaiting_otp' : 'pending',
+                        otpCode: u.otp_code || null
+                    }));
+                    pendingList = dbUsers;
+                }
+            } catch (e) {
+                console.log('Pending users live fetch fallback to local:', e.message);
+            }
+        }
+
         const activePending = pendingList.filter(r => r.status === 'pending');
         if (badgePendingCount) badgePendingCount.textContent = activePending.length;
 
@@ -98,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
                 <tr>
-                    <td><small class="font-monospace text-navy fw-bold">${r.id}</small></td>
+                    <td><small class="font-monospace text-navy fw-bold">${r.id.length > 12 ? r.id.slice(0,8) + '...' : r.id}</small></td>
                     <td><span class="fw-semibold text-dark">${r.name}</span></td>
                     <td><small class="font-monospace text-primary">${r.email}</small></td>
                     <td><span class="badge ${getRoleBadgeClass(r.role)} font-monospace">${r.role}</span></td>
@@ -113,12 +164,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Attach event handlers
         document.querySelectorAll('.btn-approve-user').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                const req = GovData.pendingRegistrations.find(r => r.id === id);
+                const req = pendingList.find(r => r.id === id);
                 if (req) {
+                    let otpCode = null;
+
+                    // Call backend first to get the real OTP
+                    if (window.GovApi) {
+                        try {
+                            const res = await GovApi.approveUser(id);
+                            console.log('✅ Super Admin approved user in PostgreSQL backend:', res);
+                            otpCode = res.otp || res.mock_otp || null;
+                        } catch (err) {
+                            console.log('Live approval fallback:', err.message);
+                            GovUtils.showToast(`Approval failed: ${err.message || 'Make sure your local backend server is running.'}`, 'error');
+                            return;
+                        }
+                    }
+
+                    if (!otpCode) {
+                        GovUtils.showToast('Backend did not return an OTP code.', 'error');
+                        return;
+                    }
+
                     req.status = 'approved_awaiting_otp';
-                    req.otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+                    req.otpCode = otpCode;
 
                     GovData.auditTrail.unshift({
                         id: GovData.auditTrail.length + 1,
@@ -127,13 +198,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         role: 'Super Admin',
                         action: 'REGISTRATION_APPROVED_OTP_DISPATCHED',
                         module: 'Auth',
-                        detail: `Approved ${req.name} (${req.role}). 6-digit OTP (${req.otpCode}) dispatched to ${req.email}.`
+                        detail: `Approved ${req.name} (${req.role}). 6-digit OTP (${otpCode}) dispatched to ${req.email}.`
                     });
 
-                    GovUtils.showToast(`Official approved! 6-digit activation OTP (${req.otpCode}) dispatched to ${req.email}`, 'success');
+                    GovUtils.showToast(`Official approved! 6-digit activation OTP (${otpCode}) dispatched to ${req.email}`, 'success');
                     renderPendingRegistrations();
-                    renderPendingRegistrations();
-    renderAuditTrail();
+                    renderAuditTrail();
                 }
             });
         });
@@ -144,6 +214,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const req = GovData.pendingRegistrations.find(r => r.id === id);
                 if (req) {
                     req.status = 'rejected';
+
+                    if (window.GovApi) {
+                        GovApi.rejectUser(id).then(res => {
+                            console.log('✅ Super Admin rejected user in PostgreSQL backend:', res);
+                        }).catch(err => {
+                            console.log('Live rejection fallback:', err.message);
+                        });
+                    }
 
                     GovData.auditTrail.unshift({
                         id: GovData.auditTrail.length + 1,
@@ -199,6 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Validator Sign-Offs
     function renderSignoffs() {
         signoffsCount.textContent = GovData.validatorSignoffs.length;
+
+        if (GovData.validatorSignoffs.length === 0) {
+            signoffsTbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No pending validator sign-offs found.</td></tr>';
+            return;
+        }
 
         signoffsTbody.innerHTML = GovData.validatorSignoffs.map(so => {
             const isSigned = so.status === 'Signed Off';
@@ -259,6 +342,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Users
     function renderUsers() {
         usersCount.textContent = GovData.users.length;
+
+        if (GovData.users.length === 0) {
+            usersTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No active user records found. Use the + Provision New User button to create users.</td></tr>';
+            return;
+        }
 
         usersTbody.innerHTML = GovData.users.map(u => `
             <tr>
@@ -341,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial render
     renderAuditTrail();
+    renderPendingRegistrations();
     renderSignoffs();
     renderUsers();
     renderRbac();

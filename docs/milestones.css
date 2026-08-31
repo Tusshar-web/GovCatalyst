@@ -2,6 +2,13 @@
 .milestone-card {
     border-left: 4px solid #6c757d;
     transition: all 0.2s ease;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 31, 63, 0.06);
+}
+
+.milestone-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 31, 63, 0.12);
+    transform: translateY(-2px);
 }
 
 .milestone-card.state-completed {
@@ -22,17 +29,113 @@
 .state-badge-completed {
     background: #d1e7dd;
     color: #0f5132;
+    font-weight: 600;
 }
 
 .state-badge-inprogress {
     background: #cfe2ff;
     color: #084298;
+    font-weight: 600;
 }
 
 .state-badge-pending {
     background: #fff3cd;
     color: #664d03;
+    font-weight: 600;
 }
+
+/* 4-Phase Stepper Styles */
+.phase-stepper {
+    display: flex;
+    justify-content-between;
+    position: relative;
+    margin: 15px 0;
+}
+
+.phase-step-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 0 10px;
+}
+
+.phase-step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: -50%;
+    width: 100%;
+    height: 3px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.phase-step-item.completed:not(:last-child)::after {
+    background: #198754;
+}
+
+.phase-step-item.active:not(:last-child)::after {
+    background: #0d6efd;
+}
+
+.phase-step-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    border: 3px solid #dee2e6;
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.phase-step-item.completed .phase-step-circle {
+    background: #198754;
+    border-color: #198754;
+    color: #ffffff;
+}
+
+.phase-step-item.active .phase-step-circle {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+}
+
+.phase-step-title {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #001f3f;
+}
+
+.phase-step-desc {
+    font-size: 11px;
+    color: #6c757d;
+}
+
+/* Phase Section Headers */
+.phase-section-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #001f3f;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.phase-pill-1 { background: #e3f2fd; color: #0d47a1; }
+.phase-pill-2 { background: #e8f5e9; color: #1b5e20; }
+.phase-pill-3 { background: #fff8e1; color: #f57f17; }
+.phase-pill-4 { background: #f3e5f5; color: #4a148c; }
 
 .agreement-print-container {
     background: #fff;

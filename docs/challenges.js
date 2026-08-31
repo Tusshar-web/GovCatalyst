@@ -2,7 +2,8 @@
    GovCatalyst — Module 1: Challenge Builder Logic
    ============================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    let challengesList = GovData.challenges;
     const tableBody = document.getElementById('challenges-tbody');
     const cardForm = document.getElementById('card-form');
     const btnToggle = document.getElementById('btn-toggle-builder');
@@ -13,6 +14,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const formChallenge = document.getElementById('form-challenge');
     const searchInput = document.getElementById('search-challenge');
     const filterStatus = document.getElementById('filter-status');
+
+    // Role-based Access Control (RBAC) on UI
+    const currentUser = window.GovApi ? GovApi.getCurrentUser() : null;
+    if (currentUser && btnToggle) {
+        // Only allow dept_admin (and super_admin) to create challenges
+        if (currentUser.role !== 'dept_admin' && currentUser.role !== 'super_admin') {
+            btnToggle.style.display = 'none';
+        }
+    }
 
     // Toggle Form visibility
     function toggleForm(show) {
@@ -39,12 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // AI Rewrite Simulation
-    btnAiRewrite?.addEventListener('click', () => {
+    // AI Rewrite Integration (Google Gemini)
+    btnAiRewrite?.addEventListener('click', async () => {
         const title = document.getElementById('inp-title').value.trim();
         const desc = document.getElementById('inp-desc').value.trim();
         const dept = document.getElementById('inp-dept').value || 'Department';
         const cat = document.getElementById('inp-cat').value;
+        const budget = document.getElementById('inp-turnover').value;
 
         if (!desc) {
             GovUtils.showToast('Please enter a problem description first to rewrite.', 'warning');
@@ -54,25 +65,35 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAiRewrite.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Formulating Measurable Outcomes...';
         btnAiRewrite.disabled = true;
 
-        setTimeout(() => {
-            let measurableOutcome = '';
-            if (cat === 'AI/ML' || desc.toLowerCase().includes('inspect') || desc.toLowerCase().includes('detect')) {
-                measurableOutcome = `[OUTCOME-BASED OBJECTIVE] Deploy a non-invasive ${cat} solution capable of achieving ≥ 40% reduction in operational turnaround time compared to current departmental baseline, maintaining ≥ 90% accuracy in automated defect/pattern recognition across a controlled pilot sample of 50-100 instances over 8 weeks, integrated with ${dept} reporting workflows.`;
-            } else if (cat === 'IoT' || desc.toLowerCase().includes('water') || desc.toLowerCase().includes('sensor')) {
-                measurableOutcome = `[OUTCOME-BASED OBJECTIVE] Implement real-time automated telemetry and sensor monitoring across the pilot jurisdiction to achieve ≥ 85% event detection rate with incident response time reduced to under 4 hours, verified through automated KPI telemetry over a 12-week sandbox trial.`;
-            } else {
-                measurableOutcome = `[OUTCOME-BASED OBJECTIVE] Deliver a citizen-centric digital workflow automating manual interventions, reducing end-to-end processing latency by ≥ 50% with zero physical visits required, ensuring 99.9% uptime and compliance with Maharashtra digital governance standards.`;
-            }
+        if (window.GovApi) {
+            try {
+                const res = await GovApi.generateChallengeDraft({
+                    raw_problem_input: desc,
+                    sector: cat,
+                    budget_ceiling: budget
+                });
 
-            document.getElementById('inp-outcome').value = measurableOutcome;
-            btnAiRewrite.innerHTML = '<i class="bi bi-robot me-1"></i> AI Rewrite → Convert to Measurable Outcome Statement';
-            btnAiRewrite.disabled = false;
-            GovUtils.showToast('Problem rewritten into GFR Rule 194 compliant outcome statement!', 'success');
-        }, 600);
+                if (res.success && res.ai_draft) {
+                    document.getElementById('inp-outcome').value = res.ai_draft.outcome_statement;
+                    if (res.ai_draft.tech_tags && res.ai_draft.tech_tags.length > 0) {
+                        document.getElementById('inp-tech-tags').value = res.ai_draft.tech_tags.join(', ');
+                    }
+                    GovUtils.showToast('Problem rewritten into GFR Rule 194 compliant outcome statement!', 'success');
+                }
+            } catch (err) {
+                console.error('AI Draft Error:', err);
+                GovUtils.showToast('Failed to generate AI draft. Please try again.', 'error');
+            }
+        } else {
+            GovUtils.showToast('GovApi is not available. Ensure you are running the backend server.', 'error');
+        }
+
+        btnAiRewrite.innerHTML = '<i class="bi bi-robot me-1"></i> AI Rewrite → Convert to Measurable Outcome Statement (GFR 194)';
+        btnAiRewrite.disabled = false;
     });
 
     // Form submission
-    formChallenge?.addEventListener('submit', (e) => {
+    formChallenge?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const newChallenge = {
             id: `CH-00${GovData.challenges.length + 1}`,
@@ -87,7 +108,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         GovData.challenges.unshift(newChallenge);
-        
+
+        // Dispatch live to PostgreSQL backend if available
+        if (window.GovApi) {
+            try {
+                const res = await GovApi.createChallenge({
+                    title: newChallenge.title,
+                    raw_problem_input: newChallenge.description,
+                    outcome_statement: newChallenge.outcomeStatement,
+                    sector: newChallenge.category,
+                    department: newChallenge.department
+                });
+                console.log('✅ Challenge saved in PostgreSQL backend:', res);
+                await renderTable();
+            } catch (err) {
+                console.log('Challenge backend sync fallback:', err.message);
+            }
+        }
+
         // Log in audit trail
         GovData.auditTrail.unshift({
             id: GovData.auditTrail.length + 1,
@@ -101,21 +139,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         formChallenge.reset();
         toggleForm(false);
-        renderTable();
+        await renderTable();
         updateStats();
         GovUtils.showToast(`Challenge ${newChallenge.id} created successfully as Draft!`, 'success');
     });
 
     // Render Table
-    function renderTable() {
+    async function renderTable() {
         const search = searchInput.value.toLowerCase();
         const status = filterStatus.value;
 
-        const filtered = GovData.challenges.filter(c => {
-            const matchesSearch = c.title.toLowerCase().includes(search) || 
-                                  c.department.toLowerCase().includes(search) ||
-                                  c.id.toLowerCase().includes(search);
-            const matchesStatus = !status || c.status === status;
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) {
+                    challengesList = res.challenges.map(c => ({
+                        ...c,
+                        status: c.status ? c.status.charAt(0).toUpperCase() + c.status.slice(1) : 'Draft',
+                        category: c.category || c.sector || 'Uncategorized',
+                        department: c.department || 'Government Department',
+                        description: c.description || c.raw_problem_input || 'N/A',
+                        outcomeStatement: c.outcomeStatement || c.outcome_statement || 'N/A',
+                        createdDate: c.createdDate || c.created_at || new Date().toISOString()
+                    }));
+                }
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+            challengesList = GovData.challenges;
+        }
+
+        const filtered = challengesList.filter(c => {
+            const matchesSearch = c.title.toLowerCase().includes(search) ||
+                (c.department && c.department.toLowerCase().includes(search)) ||
+                c.id.toLowerCase().includes(search);
+            const matchesStatus = !status || c.status.toLowerCase() === status.toLowerCase();
             return matchesSearch && matchesStatus;
         });
 
@@ -133,16 +191,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td><small class="fw-medium">${c.department}</small></td>
                 <td><span class="badge bg-light text-dark border">${c.category}</span></td>
-                <td><span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status}</span></td>
+                <td><span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span></td>
                 <td><small class="text-muted">${GovUtils.formatDate(c.createdDate)}</small></td>
                 <td class="text-end">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary btn-view" data-id="${c.id}" title="View Details">
                             <i class="bi bi-eye"></i> View
                         </button>
-                        ${c.status === 'Draft' ? `
+                        ${c.status === 'Draft' && currentUser && (currentUser.role === 'dept_admin' || currentUser.role === 'super_admin') ? `
                             <button class="btn btn-outline-success btn-publish" data-id="${c.id}" title="Publish to Startups">
                                 <i class="bi bi-send"></i> Publish
+                            </button>
+                            <button class="btn btn-outline-danger btn-delete" data-id="${c.id}" title="Delete Draft">
+                                <i class="bi bi-trash"></i>
                             </button>
                         ` : ''}
                     </div>
@@ -158,10 +219,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.btn-publish').forEach(btn => {
             btn?.addEventListener('click', () => publishChallenge(btn.dataset.id));
         });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn?.addEventListener('click', () => deleteChallengeUI(btn.dataset.id));
+        });
     }
 
     function viewChallengeDetails(id) {
-        const c = GovData.challenges.find(ch => ch.id === id);
+        const c = challengesList.find(ch => ch.id === id);
         if (!c) return;
 
         const content = `
@@ -171,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="badge bg-primary me-2">${c.id}</span>
                         <span class="badge bg-secondary">${c.category}</span>
                     </div>
-                    <span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status}</span>
+                    <span class="badge-gov ${GovUtils.getBadgeClass(c.status)}">${c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span>
                 </div>
                 <h5 class="fw-bold text-navy mb-1">${c.title}</h5>
                 <p class="text-muted mb-3"><i class="bi bi-building me-1"></i> ${c.department}</p>
@@ -192,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="mt-4 pt-3 border-top text-end">
-                    ${c.status === 'Draft' ? `
+                    ${c.status === 'Draft' && currentUser && (currentUser.role === 'dept_admin' || currentUser.role === 'super_admin') ? `
                         <button class="btn btn-success btn-sm me-2" onclick="document.querySelector('.btn-publish[data-id=\\'${c.id}\\']')?.click(); GovUtils.closeModal();">
                             <i class="bi bi-send me-1"></i> Publish Statement
                         </button>
@@ -205,36 +270,72 @@ document.addEventListener('DOMContentLoaded', () => {
         GovUtils.openModal(`Challenge Specification — ${c.id}`, content);
     }
 
-    function publishChallenge(id) {
-        const c = GovData.challenges.find(ch => ch.id === id);
+    async function publishChallenge(id) {
+        let c = GovData.challenges.find(ch => ch.id === id);
+        if (!c) c = challengesList.find(ch => ch.id === id);
+
         if (c) {
             c.status = 'Published';
+
+            try {
+                if (window.GovApi) {
+                    await GovApi.publishChallenge(id);
+                }
+            } catch (e) {
+                console.error('Backend unavailable or failed:', e.message);
+                c.status = 'Draft';
+                GovUtils.showToast('Failed to publish challenge.', 'error');
+                return;
+            }
+
             GovData.auditTrail.unshift({
                 id: GovData.auditTrail.length + 1,
                 timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                user: 'Shri Rajesh Verma',
-                role: 'Dept Admin',
+                user: currentUser ? currentUser.name : 'Shri Rajesh Verma',
+                role: currentUser ? currentUser.role : 'Dept Admin',
                 action: 'Challenge Published',
                 module: 'Challenges',
-                detail: `Published challenge ${c.id} to open innovation portal.`
+                detail: `Published Challenge ${c.id}: ${c.title}`
             });
-            renderTable();
+            await renderTable();
             updateStats();
-            GovUtils.showToast(`Challenge ${c.id} is now PUBLISHED and open for startup discovery!`, 'success');
+            GovUtils.showToast('Challenge Statement Published Successfully!', 'success');
+        }
+    }
+
+    async function deleteChallengeUI(id) {
+        if (!confirm('Are you sure you want to delete this draft challenge?')) return;
+        
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.deleteChallenge(id);
+                if (res.success) {
+                    challengesList = challengesList.filter(c => c.id !== id);
+                    GovData.challenges = GovData.challenges.filter(c => c.id !== id);
+                    GovUtils.showToast('Challenge deleted successfully!', 'success');
+                    await renderTable();
+                    updateStats();
+                } else {
+                    GovUtils.showToast('Failed to delete challenge.', 'error');
+                }
+            }
+        } catch (e) {
+            console.error('Delete error:', e.message);
+            GovUtils.showToast('Failed to delete challenge.', 'error');
         }
     }
 
     function updateStats() {
-        document.getElementById('cnt-total').textContent = GovData.challenges.length;
-        document.getElementById('cnt-published').textContent = GovData.challenges.filter(c => c.status === 'Published').length;
-        document.getElementById('cnt-matched').textContent = GovData.challenges.filter(c => c.status === 'Matched').length;
-        document.getElementById('cnt-draft').textContent = GovData.challenges.filter(c => c.status === 'Draft').length;
+        document.getElementById('cnt-total').textContent = challengesList.length;
+        document.getElementById('cnt-published').textContent = challengesList.filter(c => c.status === 'Published').length;
+        document.getElementById('cnt-matched').textContent = challengesList.filter(c => c.status === 'Matched').length;
+        document.getElementById('cnt-draft').textContent = challengesList.filter(c => c.status === 'Draft').length;
     }
 
-    searchInput?.addEventListener('input', renderTable);
-    filterStatus?.addEventListener('change', renderTable);
+    searchInput?.addEventListener('input', async () => { await renderTable(); updateStats(); });
+    filterStatus?.addEventListener('change', async () => { await renderTable(); updateStats(); });
 
     // Initial render
-    renderTable();
+    await renderTable();
     updateStats();
 });

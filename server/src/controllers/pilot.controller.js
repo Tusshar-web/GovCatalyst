@@ -6,7 +6,7 @@
 const {
   Pilot, PilotKpi, PilotRisk, PilotIssue,
   PilotFeedback, PilotEvidence, PilotAuditLog,
-  PilotTelemetry, PilotAlert
+  PilotTelemetry, PilotAlert, PilotMilestone
 } = require('../models/pilot.db');
 const pilotService   = require('../services/pilot.service');
 const documentService = require('../services/document.service');
@@ -35,6 +35,29 @@ async function resolvePilot(idOrCode) {
 // ─────────────────────────────────────────────────────────────────
 async function getAllPilots(req, res) {
   try {
+    const userRole = req.user?.role?.toLowerCase?.();
+
+    // Startups should only see pilots they are assigned to
+    if (userRole === 'startup') {
+      const Startup = require('../models/startupModel');
+      const User = require('../models/userModel');
+      
+      const user = await User.findById(req.user.user_id);
+      const startupProfile = await Startup.findByUserId(req.user.user_id);
+      
+      const identifiers = [
+        startupProfile?.company_name,
+        user?.name,
+        req.user?.name,
+        startupProfile?.id,
+        req.user?.user_id
+      ].filter(Boolean);
+      
+      const pilots = await Pilot.findByStartupIdentifiers(identifiers);
+      return formatSuccess(res, pilots, 'Pilots retrieved successfully');
+    }
+
+    // Admins / validators / evaluators see all pilots
     const pilots = await Pilot.findAll();
     return formatSuccess(res, pilots, 'Pilots retrieved successfully');
   } catch (err) {
@@ -87,6 +110,19 @@ async function createPilot(req, res) {
     const pilotCode = generatePilotCode();
     const user      = req.user?.name || req.user?.email || 'Authorized Officer';
     const userId    = req.user?.user_id || req.user?.id || null;
+
+    // Strict Link Safeguard: Ensure startup has an approved evaluation for this challenge
+    const Application = require('../models/applicationModel');
+    const challengeId = data.challengeId;
+    const startupId = data.startupId;
+    
+    if (challengeId && startupId) {
+      const approvedApps = await Application.findApprovedByChallengeId(challengeId);
+      const isApproved = approvedApps.some(app => app.startup_id === startupId);
+      if (!isApproved) {
+        return formatError(res, 'Startup has not passed the Expert Evaluation Scorecard for this Challenge. Sandbox provisioning rejected.', 403);
+      }
+    }
 
     const pilot = await Pilot.create({
       pilotCode,
@@ -763,6 +799,117 @@ async function getPilotRecommendations(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// MILESTONES
+// ─────────────────────────────────────────────────────────────────
+async function getMilestones(req, res) {
+  try {
+    const pilot = await resolvePilot(req.params.id);
+    if (!pilot) return formatError(res, 'Pilot not found', 404);
+    const milestones = await PilotMilestone.findByPilot(pilot.id);
+    return formatSuccess(res, milestones, 'Milestones retrieved');
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+async function createMilestone(req, res) {
+  // Only allow authorized roles to create milestones
+  const allowedRoles = ['startup', 'dept_admin', 'super_admin'];
+  const userRole = req.user?.role?.toLowerCase?.();
+  if (!allowedRoles.includes(userRole)) {
+    return formatError(res, 'Access denied. Insufficient permissions to create milestones.', 403);
+  }
+
+  try {
+    const pilot = await resolvePilot(req.params.id);
+    if (!pilot) return formatError(res, 'Pilot not found', 404);
+
+    const body = req.body || {};
+    // PilotMilestone.create() uses explicit destructuring — pass camelCase milestoneCode directly.
+    // The frontend sends milestoneCode; accept it as-is (no rename needed).
+    const milestone = await PilotMilestone.create({
+      pilotId:       pilot.id,
+      milestoneCode: body.milestoneCode || body.milestone_code,
+      phase:         body.phase,
+      name:          body.name,
+      description:   body.description,
+      dueDate:       body.dueDate || body.due_date,
+      paymentAmount: body.paymentAmount || body.payment_amount,
+      paymentLinked: body.paymentLinked !== undefined ? body.paymentLinked : (body.payment_linked !== undefined ? body.payment_linked : true)
+    });
+
+    await PilotAuditLog.log({ pilotId: pilot.id, userId: req.user?.user_id || null, action: 'Milestone Created', detail: `Created ${milestone.milestone_code}` });
+    return formatSuccess(res, milestone, 'Milestone created', 201);
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+async function updateMilestoneStatus(req, res) {
+  try {
+    const { milestoneId } = req.params;
+    const { status } = req.body;
+    const completedDate = status === 'Verified' ? new Date().toISOString() : null;
+    
+    const milestone = await PilotMilestone.updateStatus(milestoneId, status, completedDate);
+    if (!milestone) return formatError(res, 'Milestone not found', 404);
+    
+    await PilotAuditLog.log({ pilotId: milestone.pilot_id, userId: req.user?.user_id || null, action: 'Milestone Updated', detail: `Status changed to ${status}` });
+    return formatSuccess(res, milestone, 'Milestone status updated');
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+async function autoGenerateMilestones(req, res) {
+  try {
+    const pilot = await resolvePilot(req.params.id);
+    if (!pilot) return formatError(res, 'Pilot not found', 404);
+    
+    const existing = await PilotMilestone.findByPilot(pilot.id);
+    // Allow re-provisioning only if no milestone has been started yet
+    if (existing.length > 0) {
+      const hasStarted = existing.some(m => m.status !== 'Pending');
+      if (hasStarted) {
+        return formatError(res, 'Cannot re-provision: one or more milestones are already in progress or completed.', 400);
+      }
+      // Safe to wipe and re-seed
+      await PilotMilestone.deleteByPilot(pilot.id);
+    }
+
+    const phases = [
+      { code: 'MS-01', phase: 1, name: 'Setup & Bilateral Agreement', desc: 'Indemnity, legal covenants & baseline scoping', days: 10, pct: 15 },
+      { code: 'MS-02', phase: 2, name: 'Deployment & Telemetry Integration', desc: 'Sensor install, VPC testbed isolation & telemetry', days: 30, pct: 25 },
+      { code: 'MS-03', phase: 3, name: 'Active Sandbox Testing & Execution', desc: 'Field trials, live operational data & mid-term review', days: 60, pct: 30 },
+      { code: 'MS-04', phase: 4, name: 'Final Evaluation, Audit & Transition', desc: 'Committee report, validator sign-off & GeM scale', days: 90, pct: 30 }
+    ];
+
+    const budget = parseFloat(pilot.budget_allocated) || 0;
+    const startDate = new Date(pilot.start_date || Date.now());
+    
+    for (const p of phases) {
+      const dueDate = new Date(startDate.getTime() + p.days * 24 * 60 * 60 * 1000);
+      await PilotMilestone.create({
+        pilotId: pilot.id,
+        milestoneCode: p.code,
+        phase: p.phase,
+        name: p.name,
+        description: p.desc,
+        dueDate: dueDate.toISOString().split('T')[0],
+        paymentAmount: (budget * p.pct) / 100,
+        paymentLinked: true
+      });
+    }
+
+    await PilotAuditLog.log({ pilotId: pilot.id, userId: req.user?.user_id || null, action: 'Milestones Auto-Generated', detail: 'Standard 4-phase tranches set' });
+    const milestones = await PilotMilestone.findByPilot(pilot.id);
+    return formatSuccess(res, milestones, '4-Phase Milestones provisioned successfully', 201);
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
 module.exports = {
   getAllPilots, getPilotById, createPilot,
   updateStatus, evaluatePilot, getCompletionReport,
@@ -782,6 +929,8 @@ module.exports = {
   recordKpiTelemetry, recordBatchTelemetry, getPilotTelemetry,
   getPilotAlerts, acknowledgeAlert,
   // Evaluation & Recommendations
-  getPilotEvaluationReport, getPilotRecommendations
+  getPilotEvaluationReport, getPilotRecommendations,
+  // Milestones
+  getMilestones, createMilestone, updateMilestoneStatus, autoGenerateMilestones
 };
 

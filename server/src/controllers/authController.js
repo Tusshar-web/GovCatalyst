@@ -9,6 +9,7 @@ const Joi = require('joi');
 async function register(req, res) {
   try {
     // 1. Edge Case: Missing required fields -> 400 with clear message
+    // 1. Validation schema allowing startup and government official profile fields
     const schema = Joi.object({
       name: Joi.string().required().messages({
         'any.required': 'Name is required.',
@@ -24,25 +25,54 @@ async function register(req, res) {
         'string.min': 'Password must be at least 6 characters long.',
         'string.empty': 'Password cannot be empty.'
       }),
-      role: Joi.string().valid('dept_admin', 'startup', 'evaluator', 'validator').required().messages({
+      role: Joi.string().valid('dept_admin', 'startup', 'evaluator', 'validator', 'super_admin').required().messages({
         'any.required': 'Role is required.',
         'any.only': 'Invalid role provided.'
       }),
       department_name: Joi.string().optional().allow(null, ''),
-      designation: Joi.string().optional().allow(null, '')
-    });
+      designation: Joi.string().optional().allow(null, ''),
+      company_name: Joi.string().optional().allow(null, ''),
+      sector: Joi.string().optional().allow(null, ''),
+      dpiit_reg_number: Joi.string().optional().allow(null, '')
+    }).unknown(true);
 
     const { error, value } = schema.validate(req.body);
     if (error) {
       return res.status(400).json({ success: false, message: error.details[0].message });
     }
 
-    const { name, email, password, role, department_name, designation } = value;
+    const { name, email, password, role, department_name, designation, company_name, sector, dpiit_reg_number } = value;
+
+    // Prevent self-registration of super_admin
+    if (role === 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Super Admin accounts cannot be self-registered. Contact system administrator.'
+      });
+    }
+
+    // Block logged-in government officials from registering startup accounts
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const { verifyToken } = require('../utils/authUtils');
+        const token = authHeader.split(' ')[1];
+        const decoded = verifyToken(token);
+        if (decoded && decoded.role && decoded.role !== 'startup') {
+          return res.status(403).json({
+            success: false,
+            message: `Active session detected for ${decoded.role}. Government accounts cannot register startups.`
+          });
+        }
+      } catch (e) {
+        // Ignore invalid token
+      }
+    }
 
     // 2. Edge Case: Register with an email that already exists -> 409
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
-      return res.status(409).json({ success: false, message: 'Email already registered' });
+      return res.status(409).json({ success: false, message: 'Email already registered. Please log in or check your account status.' });
     }
 
     const password_hash = await hashPassword(password);
@@ -57,7 +87,12 @@ async function register(req, res) {
     });
 
     if (role === 'startup') {
-      await Startup.create({ user_id: newUser.id, company_name: name });
+      await Startup.create({ 
+        user_id: newUser.id, 
+        company_name: company_name || name,
+        sector: sector || null,
+        dpiit_reg_number: dpiit_reg_number || null
+      });
     } else if (role !== 'super_admin') {
       // 3. Notify superadmin for non-startup, non-superadmin registrations
       await sendNewRegistrationToAdmin(newUser);
@@ -120,35 +155,47 @@ async function getPendingUsers(req, res) {
   return res.json({ success: true, users });
 }
 
-// POST /api/auth/approve/:userId  (super_admin only)
+// POST /api/auth/approve/:id  (super_admin only)
 async function approveUser(req, res) {
-  const { userId } = req.params;
-  const user = await User.updateStatus(userId, 'approved', req.user.user_id);
-  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  try {
+    const userId = req.params.id || req.params.userId;
+    const approvedBy = req.user?.user_id || null;
+    const user = await User.updateStatus(userId, 'approved', approvedBy);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-  await Otp.create(userId, otpCode);
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await Otp.create(userId, otpCode);
 
-  // Send the actual OTP email via Nodemailer
-  await sendOtpToUser(user.email, otpCode);
-  console.log(`OTP for ${user.email}: ${otpCode}`); // Keep for debug
+    // Send the actual OTP email via Nodemailer
+    await sendOtpToUser(user.email, otpCode);
+    console.log(`OTP for ${user.email}: ${otpCode}`);
 
-  return res.json({ 
-    success: true, 
-    message: 'User approved, OTP generated', 
-    mock_otp: otpCode // ⚠️ only exposing this for demo purposes — remove in real prod
-  });
+    return res.json({ 
+      success: true, 
+      message: 'User approved, OTP generated', 
+      otp: otpCode
+    });
+  } catch (err) {
+    console.error('approveUser error:', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 }
 
 async function rejectUser(req, res) {
-  const { userId } = req.params;
-  const user = await User.updateStatus(userId, 'rejected', req.user.user_id);
-  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  try {
+    const userId = req.params.id || req.params.userId;
+    const rejectedBy = req.user?.user_id || null;
+    const user = await User.updateStatus(userId, 'rejected', rejectedBy);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-  // Send rejection email via Nodemailer
-  await sendRejectionToUser(user.email);
+    // Send rejection email via Nodemailer
+    await sendRejectionToUser(user.email);
 
-  return res.json({ success: true, message: 'User rejected' });
+    return res.json({ success: true, message: 'User rejected' });
+  } catch (err) {
+    console.error('rejectUser error:', err.message);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 }
 
 // POST /api/auth/verify-otp

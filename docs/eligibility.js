@@ -17,6 +17,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let exemptionsEnabled = true;
 
+    function getOrCreateScreening(su) {
+        let screening = GovData.startupScreenings.find(sc => sc.startupId === su.id);
+        if (!screening) {
+            const metTurnover = exemptionsEnabled ? su.turnover >= 2500000 : su.turnover >= 100000000;
+            const metDpiit = !!su.dpiitNumber && su.dpiitNumber !== 'DIPP-PENDING';
+            const metProto = su.stage !== 'Seed' || su.pastPilots > 0;
+            const metPilots = exemptionsEnabled ? su.pastPilots >= 1 : su.pastPilots >= 3;
+            
+            screening = {
+                startupId: su.id,
+                results: [
+                    { criterionId: 'EC-1', rule: 'Annual Turnover', met: metTurnover, value: GovUtils.formatCurrency(su.turnover), notes: metTurnover ? 'Qualifies under relaxed norms' : 'Below relaxed turnover threshold' },
+                    { criterionId: 'EC-2', rule: 'Years of Operation', met: true, value: `${2026 - parseInt(su.founded || '2022')} years`, notes: 'Operating with prototype' },
+                    { criterionId: 'EC-3', rule: 'DPIIT Recognition', met: metDpiit, value: su.dpiitNumber || 'None', notes: metDpiit ? 'Valid DPIIT Certificate' : 'Pending DPIIT' },
+                    { criterionId: 'EC-4', rule: 'Prototype / MVP Readiness', met: metProto, value: su.stage + ' Demo', notes: 'MVP Demonstrated' },
+                    { criterionId: 'EC-5', rule: 'Team Credentials', met: true, value: 'Domain Founder', notes: su.founders },
+                    { criterionId: 'EC-6', rule: 'Past Government Projects', met: metPilots, value: `${su.pastPilots} pilots`, notes: metPilots ? 'Meets experience track' : 'Insufficient pilots' }
+                ],
+                overallStatus: (metTurnover && metDpiit && metProto) ? 'ELIGIBLE' : 'NOT ELIGIBLE'
+            };
+            GovData.startupScreenings.push(screening);
+        }
+        return screening;
+    }
+
     // Render Rules Matrix Table
     function renderRulesMatrix() {
         criteriaTbody.innerHTML = GovData.eligibilityCriteria.map(ec => `
@@ -35,7 +60,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate Startup Selector
-    function populateStartupSelector() {
+    async function populateStartupSelector() {
+        if (window.GovApi) {
+            try {
+                const res = await GovApi.getStartups();
+                if (res && res.success && res.startups && res.startups.length > 0) {
+                    const mapped = res.startups.map(a => ({
+                        id: a.id,
+                        name: a.company_name || a.startup_name || a.name || a.applicant_name,
+                        sector: a.sector || 'AgriTech / GovTech',
+                        turnover: parseFloat(a.turnover) || 5000000,
+                        dpiitNumber: a.dpiit_number || 'DIPP-PENDING',
+                        pastPilots: parseInt(a.past_pilots) || 0,
+                        stage: a.stage || 'Series A',
+                        city: a.city || 'Bangalore'
+                    }));
+                    GovData.startups = mapped;
+                }
+            } catch (e) {
+                console.log('Live startups fetch notice:', e.message);
+            }
+        }
+        if (!GovData.startups || GovData.startups.length === 0) {
+            selScreeningSu.innerHTML = '<option value="">-- No Startups Registered --</option>';
+            if (screeningSuSummary) screeningSuSummary.innerHTML = '<div class="text-muted small p-2">No startup entity currently selected.</div>';
+            if (checklistTbody) checklistTbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No startup selected for eligibility verification.</td></tr>';
+            return;
+        }
         selScreeningSu.innerHTML = GovData.startups.map(su => `
             <option value="${su.id}">[${su.id}] ${su.name} (${su.sector})</option>
         `).join('');
@@ -64,27 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         // Retrieve or compute screening results
-        let screening = GovData.startupScreenings.find(sc => sc.startupId === suId);
-        if (!screening) {
-            // Auto-generate screening
-            const metTurnover = exemptionsEnabled ? su.turnover >= 2500000 : su.turnover >= 100000000;
-            const metDpiit = !!su.dpiitNumber && su.dpiitNumber !== 'DIPP-PENDING';
-            const metProto = su.stage !== 'Seed' || su.pastPilots > 0;
-            const metPilots = exemptionsEnabled ? su.pastPilots >= 1 : su.pastPilots >= 3;
-            
-            screening = {
-                startupId: suId,
-                results: [
-                    { criterionId: 'EC-1', met: metTurnover, value: GovUtils.formatCurrency(su.turnover), notes: metTurnover ? 'Qualifies under relaxed norms' : 'Below relaxed turnover threshold' },
-                    { criterionId: 'EC-2', met: true, value: `${2026 - parseInt(su.founded || '2022')} years`, notes: 'Operating with prototype' },
-                    { criterionId: 'EC-3', met: metDpiit, value: su.dpiitNumber || 'None', notes: metDpiit ? 'Valid DPIIT Certificate' : 'Pending DPIIT' },
-                    { criterionId: 'EC-4', met: metProto, value: su.stage + ' Demo', notes: 'MVP Demonstrated' },
-                    { criterionId: 'EC-5', met: true, value: 'Domain Founder', notes: su.founders },
-                    { criterionId: 'EC-6', met: metPilots, value: `${su.pastPilots} pilots`, notes: metPilots ? 'Meets experience track' : 'Insufficient pilots' }
-                ],
-                overallStatus: (metTurnover && metDpiit && metProto) ? 'ELIGIBLE' : 'NOT ELIGIBLE'
-            };
-        }
+        const screening = getOrCreateScreening(su);
 
         // Checklist Table
         let metCount = 0;
@@ -128,10 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render Batch Screening Table
     function renderBatchTable() {
+        if (!GovData.startups || GovData.startups.length === 0) {
+            batchTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No startup screening records found.</td></tr>';
+            return;
+        }
         batchTbody.innerHTML = GovData.startups.map(su => {
-            const screening = GovData.startupScreenings.find(s => s.startupId === su.id);
-            const status = screening ? screening.overallStatus : (su.dpiitNumber ? 'ELIGIBLE' : 'NOT ELIGIBLE');
-            const criteriaPassed = screening ? screening.results.filter(r => r.met).length : (status === 'ELIGIBLE' ? 5 : 2);
+            const screening = getOrCreateScreening(su);
+            const status = screening.overallStatus;
+            const criteriaPassed = screening.results.filter(r => r.met).length;
 
             return `
                 <tr>
@@ -153,11 +188,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.btn-inspect-screening').forEach(btn => {
             btn?.addEventListener('click', () => {
-                selScreeningSu.value = btn.dataset.id;
-                renderScreeningFor(btn.dataset.id);
-                document.getElementById('screening-su-summary').scrollIntoView({ behavior: 'smooth' });
+                showAuditModal(btn.dataset.id);
             });
         });
+    }
+
+    function showAuditModal(id) {
+        const su = GovData.startups.find(s => s.id === id);
+        if (!su) return;
+        const screening = getOrCreateScreening(su);
+        
+        let resultsHtml = screening.results.map(r => `
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                <div><i class="bi ${r.met ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} me-2"></i><strong>${r.rule}</strong></div>
+                <div class="small text-muted">${r.value} &bull; ${r.notes}</div>
+            </div>
+        `).join('');
+
+        const html = `
+            <div class="p-3">
+                <div class="d-flex justify-content-between mb-3">
+                    <h5 class="fw-bold">${su.name} <span class="badge bg-primary ms-2">${su.dpiitNumber || 'Unverified'}</span></h5>
+                    <span class="badge ${screening && screening.overallStatus === 'ELIGIBLE' ? 'bg-success' : 'bg-danger'}">${screening ? screening.overallStatus : 'PENDING'}</span>
+                </div>
+                <div class="mb-4">
+                    <h6 class="fw-bold border-bottom pb-2">Compliance Audit Trail</h6>
+                    ${resultsHtml}
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-outline-primary btn-sm me-2" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print Report</button>
+                    <button class="btn btn-secondary btn-sm" onclick="GovUtils.closeModal()">Close</button>
+                </div>
+            </div>
+        `;
+        GovUtils.openModal(`Audit Log: ${su.name}`, html);
     }
 
     // Event Listeners
@@ -173,14 +237,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-export-screening')?.addEventListener('click', () => {
-        GovUtils.showToast('Eligibility Audit Log exported to PDF / CSV (GFR 194 Compliance Report).', 'success');
+        if (!GovData.startups || GovData.startups.length === 0) {
+            GovUtils.showToast('No data to export.', 'warning');
+            return;
+        }
+        
+        const headers = ['Entity Name', 'Sector', 'DPIIT Cert', 'Turnover', 'Prototype Stage', 'Final Status'];
+        const rows = GovData.startups.map(su => {
+            const screening = getOrCreateScreening(su);
+            const status = screening.overallStatus;
+            return [
+                `"${su.name.replace(/"/g, '""')}"`,
+                `"${su.sector}"`,
+                `"${su.dpiitNumber || 'None'}"`,
+                su.turnover,
+                `"${su.stage}"`,
+                `"${status}"`
+            ];
+        });
+        
+        let csvContent = "data:text/csv;charset=utf-8," 
+            + headers.join(',') + "\n" 
+            + rows.map(e => e.join(",")).join("\n");
+            
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "govcatalyst_screening_log.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        GovUtils.showToast('Eligibility Audit Log exported successfully.', 'success');
     });
 
     // Initialize
-    renderRulesMatrix();
-    populateStartupSelector();
-    if (GovData.startups.length > 0) {
-        renderScreeningFor(GovData.startups[0].id);
+    async function initPage() {
+        renderRulesMatrix();
+
+        try {
+            if (window.GovApi) {
+                const refreshRes = await GovApi.getStartups();
+                if (refreshRes.success && refreshRes.startups) {
+                    GovData.startups = refreshRes.startups.map(s => ({
+                        id: s.id,
+                        name: s.company_name || 'Unnamed Startup',
+                        description: s.pitch_summary || 'No description provided.',
+                        sector: s.sector || 'General',
+                        techStack: s.tech_tags || [],
+                        matchTags: s.tech_tags ? s.tech_tags.map(t => t.toLowerCase()) : [],
+                        pastPilots: s.past_pilots || 0,
+                        turnover: s.past_turnover || 0,
+                        stage: s.stage || 'Early',
+                        dpiitNumber: s.dpiit_reg_number,
+                        gemRegistered: s.gem_registered,
+                        city: s.city || 'Not Specified',
+                        founders: s.founders || 'Not Specified'
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load initial startups:', e);
+        }
+
+        populateStartupSelector();
+        if (GovData.startups.length > 0) {
+            renderScreeningFor(GovData.startups[0].id);
+        }
+        renderBatchTable();
     }
-    renderBatchTable();
+
+    initPage();
 });

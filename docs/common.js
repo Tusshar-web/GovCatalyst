@@ -90,8 +90,8 @@ window.GovLang = {
             langToggleBtn.style.color = this.current === 'mr' ? '#ffc107' : '#ffffff';
         }
 
-        const msg = this.current === 'mr' 
-            ? '🌐 भाषा मराठीत बदलली आहे (Language: Marathi)' 
+        const msg = this.current === 'mr'
+            ? '🌐 भाषा मराठीत बदलली आहे (Language: Marathi)'
             : '🌐 Switched to English language';
         if (window.GovUtils && window.GovUtils.showToast) {
             window.GovUtils.showToast(msg, 'info');
@@ -102,267 +102,8 @@ window.GovLang = {
 
 
 // ============================================
-// SECTION 2: MOCK DATA FOR ALL 10 MODULES
 // ============================================
-window.GovData = {
-
-    // --- MODULE 1: AUTH & REGISTRATION WORKFLOW ---
-    pendingRegistrations: [
-        {
-            id: 'REG-001',
-            name: 'Shri Sandeep More',
-            email: 'sandeep.more@pwd.maharashtra.gov.in',
-            role: 'Dept Admin',
-            roleKey: 'dept_admin',
-            department: 'Public Works Department (PWD)',
-            designation: 'Superintending Engineer',
-            status: 'pending',
-            appliedAt: '2026-08-28 14:30',
-            otpCode: null
-        },
-        {
-            id: 'REG-002',
-            name: 'Prof. Anjali Deshpande',
-            email: 'a.deshpande@iitb.ac.in',
-            role: 'Evaluator',
-            roleKey: 'evaluator',
-            department: 'IIT Bombay / AI Domain Expert',
-            designation: 'Professor of Computer Science',
-            status: 'pending',
-            appliedAt: '2026-08-28 16:45',
-            otpCode: null
-        },
-        {
-            id: 'REG-003',
-            name: 'Shri Rakesh Kulkarni',
-            email: 'rakesh.kulkarni@audit.gov.in',
-            role: 'Validator',
-            roleKey: 'validator',
-            department: 'Directorate of Accounts & Treasury',
-            designation: 'Senior Audit Officer',
-            status: 'approved_awaiting_otp',
-            appliedAt: '2026-08-27 11:20',
-            otpCode: '582914'
-        },
-        {
-            id: 'REG-004',
-            name: 'Dr. Nitin Shinde',
-            email: 'nitin.shinde@privateconsulting.com',
-            role: 'Evaluator',
-            roleKey: 'evaluator',
-            department: 'External Consultant',
-            designation: 'Technical Advisor',
-            status: 'rejected',
-            appliedAt: '2026-08-26 10:15',
-            rejectionReason: 'Non-official email domain; unverified institutional credentials',
-            otpCode: null
-        }
-    ],
-
-
-    // --- MODULE 1: CHALLENGES ---
-    challenges: [
-        { id: 'CH-001', title: 'AI-Powered Highway Infrastructure Inspection', department: 'Public Works Department (PWD)', description: 'Manual visual inspection of concrete bridges and highway overpasses is slow, hazardous, and takes an average of 10 hours per bridge deck with subjective error rates.', outcomeStatement: 'Reduce bridge inspection time by at least 40% (from 10 hrs to 6 hrs or less) while maintaining defect detection accuracy above 90%, measured over 100 inspection cases across 3 bridge sites within 8 weeks.', category: 'AI/ML', status: 'Matched', createdDate: '2026-04-15', templateUsed: 'T3' },
-        { id: 'CH-002', title: 'Smart Water Leakage Detection System', department: 'Water Supply & Sanitation Dept', description: 'Urban water supply networks experience 30-40% water loss due to undetected pipeline leakages. Current detection methods rely on citizen complaints and are reactive.', outcomeStatement: 'Achieve leak detection rate of 85% or above with response time under 4 hours, deployed across Pune Municipal Corporation pilot zone within 12 weeks.', category: 'IoT', status: 'Published', createdDate: '2026-05-20', templateUsed: 'T1' },
-        { id: 'CH-003', title: 'Digital Land Record Verification Portal', department: 'Revenue & Forest Department', description: 'Land record verification takes 15-20 days involving multiple office visits. Citizens face difficulty in verifying property ownership and encumbrance status.', outcomeStatement: 'Enable online land record verification within 48 hours with 95% data accuracy, reducing citizen visits from 4 to 0 for standard verification requests.', category: 'Software', status: 'Draft', createdDate: '2026-06-10', templateUsed: 'T1' },
-        { id: 'CH-004', title: 'AI Chatbot for Citizen Grievance Redressal', department: 'General Administration Department', description: 'The CM Helpline receives 50,000+ calls daily. Average resolution time is 7 days. Many queries are repetitive and can be auto-resolved.', outcomeStatement: 'Auto-resolve 60% of routine citizen queries within 2 minutes using AI chatbot, reducing call center load by 40% and improving citizen satisfaction score from 3.2 to 4.0 (out of 5).', category: 'AI/ML', status: 'Published', createdDate: '2026-07-01', templateUsed: 'T4' }
-    ],
-
-    challengeTemplates: [
-        { id: 'T1', name: 'Digital Service Delivery', template: 'The department seeks a solution that can [DESCRIBE OUTCOME] within [TIMEFRAME], measured by [KPI METRIC], improving from a baseline of [BASELINE VALUE] to a target of [TARGET VALUE], serving [TARGET USERS] across [DEPLOYMENT SCOPE].' },
-        { id: 'T2', name: 'Process Automation', template: 'The department requires automation of [PROCESS NAME] which currently takes [CURRENT TIME/EFFORT]. The solution should reduce processing time by [X%] while maintaining [QUALITY METRIC] above [THRESHOLD], tested over [SAMPLE SIZE] cases.' },
-        { id: 'T3', name: 'Data Analytics & AI', template: 'The department needs an AI/ML-based solution for [USE CASE] that can achieve [ACCURACY/PERFORMANCE METRIC] of [TARGET VALUE] or above, processing [DATA VOLUME] within [TIME CONSTRAINT], validated against [BENCHMARK].' },
-        { id: 'T4', name: 'Citizen Engagement', template: 'The department seeks a citizen-facing solution for [SERVICE AREA] that improves [CITIZEN METRIC] from [BASELINE] to [TARGET], reduces [FRICTION METRIC] by [X%], and serves [DAILY VOLUME] interactions within [DEPLOYMENT SCOPE].' }
-    ],
-
-    // --- MODULE 2: STARTUPS ---
-    startups: [
-        { id: 'SU-001', name: 'InspectAI Technologies Pvt Ltd', sector: 'AI/ML', stage: 'Growth', techStack: ['Python', 'TensorFlow', 'OpenCV', 'Drone SDK', 'React'], pastPilots: 3, dpiitNumber: 'DIPP-2023-MH-45821', gemRegistered: true, founders: 'Dr. Vikram Sen, Anita Kulkarni', city: 'Pune', description: 'AI-powered infrastructure inspection using drone-based computer vision for defect detection in bridges, highways, and buildings.', matchTags: ['ai', 'ml', 'infrastructure', 'inspection', 'drones', 'computer-vision'], turnover: 5200000, teamSize: 18, founded: '2022' },
-        { id: 'SU-002', name: 'AquaSense IoT Solutions', sector: 'IoT', stage: 'Early', techStack: ['Arduino', 'LoRaWAN', 'Node.js', 'MongoDB', 'React Native'], pastPilots: 1, dpiitNumber: 'DIPP-2024-MH-61234', gemRegistered: false, founders: 'Rohan Deshmukh, Meera Joshi', city: 'Nagpur', description: 'IoT-based smart water monitoring and leakage detection system using acoustic sensors and ML algorithms for municipal water networks.', matchTags: ['iot', 'water', 'smart-city', 'sensors', 'monitoring'], turnover: 1800000, teamSize: 10, founded: '2023' },
-        { id: 'SU-003', name: 'LandChain Digital Pvt Ltd', sector: 'Blockchain', stage: 'Seed', techStack: ['Solidity', 'Hyperledger', 'React', 'PostgreSQL', 'Go'], pastPilots: 0, dpiitNumber: 'DIPP-2024-MH-72456', gemRegistered: false, founders: 'Aditya Patil', city: 'Mumbai', description: 'Blockchain-based land record management and verification platform ensuring tamper-proof property documentation.', matchTags: ['blockchain', 'land-records', 'verification', 'digital', 'governance'], turnover: 800000, teamSize: 6, founded: '2024' },
-        { id: 'SU-004', name: 'NagriBot AI Pvt Ltd', sector: 'AI/ML', stage: 'Early', techStack: ['Python', 'GPT API', 'FastAPI', 'React', 'Redis'], pastPilots: 2, dpiitNumber: 'DIPP-2023-MH-51890', gemRegistered: true, founders: 'Prashant Shirke, Sneha Wagh', city: 'Pune', description: 'Multilingual AI chatbot platform for government citizen services with Marathi, Hindi, and English support.', matchTags: ['ai', 'chatbot', 'citizen', 'nlp', 'multilingual', 'grievance'], turnover: 3500000, teamSize: 12, founded: '2023' },
-        { id: 'SU-005', name: 'GreenGrid CleanTech', sector: 'CleanTech', stage: 'Growth', techStack: ['Python', 'IoT Sensors', 'AWS', 'Angular', 'PostgreSQL'], pastPilots: 4, dpiitNumber: 'DIPP-2022-MH-38901', gemRegistered: true, founders: 'Dr. Sanjay More, Kavita Raut', city: 'Nashik', description: 'Solar microgrid and energy management solutions for rural government buildings and panchayat offices.', matchTags: ['cleantech', 'solar', 'energy', 'rural', 'green'], turnover: 12000000, teamSize: 25, founded: '2021' },
-        { id: 'SU-006', name: 'EduSpark Technologies', sector: 'EdTech', stage: 'Scale', techStack: ['Flutter', 'Django', 'PostgreSQL', 'ML Models', 'AWS'], pastPilots: 5, dpiitNumber: 'DIPP-2021-MH-22345', gemRegistered: true, founders: 'Amita Bhosale, Rajiv Kadam', city: 'Aurangabad', description: 'Adaptive learning platform for government schools with personalized content delivery in Marathi medium.', matchTags: ['edtech', 'education', 'schools', 'adaptive-learning', 'marathi'], turnover: 20000000, teamSize: 35, founded: '2020' }
-    ],
-
-    // --- MODULE 3: ELIGIBILITY ---
-    eligibilityCriteria: [
-        { id: 'EC-1', name: 'Annual Turnover', standardThreshold: '₹10 Crore minimum', relaxedThreshold: '₹25 Lakh minimum (Startup India)', description: 'Minimum annual turnover requirement for vendor qualification', exemptionApplicable: true },
-        { id: 'EC-2', name: 'Years of Operation', standardThreshold: '5+ years', relaxedThreshold: '1+ year with working prototype', description: 'Minimum years of business operation', exemptionApplicable: true },
-        { id: 'EC-3', name: 'DPIIT Recognition', standardThreshold: 'Not Required', relaxedThreshold: 'Mandatory — valid DPIIT certificate', description: 'Recognition under Startup India initiative', exemptionApplicable: false },
-        { id: 'EC-4', name: 'Prototype / MVP Readiness', standardThreshold: 'Not Applicable', relaxedThreshold: 'Working prototype or MVP demo mandatory', description: 'Demonstration of functional product/prototype', exemptionApplicable: false },
-        { id: 'EC-5', name: 'Team Credentials', standardThreshold: 'Certified professionals required', relaxedThreshold: 'Technical co-founder with domain expertise', description: 'Key team qualifications and experience', exemptionApplicable: true },
-        { id: 'EC-6', name: 'Past Government Projects', standardThreshold: '3+ govt contracts completed', relaxedThreshold: '1 pilot or industry reference letter', description: 'Prior experience with government/enterprise clients', exemptionApplicable: true }
-    ],
-
-    startupScreenings: [
-        {
-            startupId: 'SU-001', results: [
-                { criterionId: 'EC-1', met: true, value: '₹52 Lakh', notes: 'Meets relaxed criteria' },
-                { criterionId: 'EC-2', met: true, value: '4 years', notes: 'Operating since 2022' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2023-MH-45821', notes: 'Valid DPIIT certificate' },
-                { criterionId: 'EC-4', met: true, value: 'Production Ready', notes: 'Deployed with 3 clients' },
-                { criterionId: 'EC-5', met: true, value: 'PhD in CV, 18-member team', notes: 'CTO holds AI/ML doctorate' },
-                { criterionId: 'EC-6', met: true, value: '3 govt pilots completed', notes: 'NHAI, MSRDC, BMC' }
-            ], overallStatus: 'ELIGIBLE'
-        },
-        {
-            startupId: 'SU-002', results: [
-                { criterionId: 'EC-1', met: true, value: '₹18 Lakh', notes: 'Below standard, meets relaxed' },
-                { criterionId: 'EC-2', met: true, value: '3 years', notes: 'Operating since 2023' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2024-MH-61234', notes: 'Valid DPIIT certificate' },
-                { criterionId: 'EC-4', met: true, value: 'MVP Deployed', notes: 'Pilot running in Nagpur' },
-                { criterionId: 'EC-5', met: true, value: 'IoT engineer founders', notes: 'IIT Bombay alumni' },
-                { criterionId: 'EC-6', met: false, value: '1 pilot (ongoing)', notes: 'No completed govt project' }
-            ], overallStatus: 'ELIGIBLE'
-        },
-        {
-            startupId: 'SU-003', results: [
-                { criterionId: 'EC-1', met: false, value: '₹8 Lakh', notes: 'Below relaxed threshold' },
-                { criterionId: 'EC-2', met: true, value: '2 years', notes: 'Operating since 2024' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2024-MH-72456', notes: 'Valid certificate' },
-                { criterionId: 'EC-4', met: true, value: 'Prototype', notes: 'Working demo available' },
-                { criterionId: 'EC-5', met: false, value: 'Solo founder', notes: 'No dedicated CTO' },
-                { criterionId: 'EC-6', met: false, value: 'None', notes: 'No prior govt experience' }
-            ], overallStatus: 'NOT ELIGIBLE'
-        },
-        {
-            startupId: 'SU-004', results: [
-                { criterionId: 'EC-1', met: true, value: '₹35 Lakh', notes: 'Meets relaxed criteria' },
-                { criterionId: 'EC-2', met: true, value: '3 years', notes: 'Operating since 2023' },
-                { criterionId: 'EC-3', met: true, value: 'DIPP-2023-MH-51890', notes: 'Valid certificate' },
-                { criterionId: 'EC-4', met: true, value: 'Production', notes: 'Live chatbot with 2 clients' },
-                { criterionId: 'EC-5', met: true, value: 'NLP specialists, 12 team', notes: 'Strong AI team' },
-                { criterionId: 'EC-6', met: true, value: '2 govt pilots', notes: 'PMC, Collector Office' }
-            ], overallStatus: 'ELIGIBLE'
-        }
-    ],
-
-    // --- MODULE 4: EVALUATION ---
-    evaluators: [
-        { id: 'EV-001', name: 'Dr. Priya Sharma', expertise: 'AI/ML & Computer Vision', department: 'IT Department', coiDeclared: false, coiDetails: '' },
-        { id: 'EV-002', name: 'Shri Amit Patel', expertise: 'Infrastructure & Civil Engineering', department: 'PWD', coiDeclared: true, coiDetails: 'Advisory board member of SU-005 (GreenGrid)' },
-        { id: 'EV-003', name: 'Dr. Sunita Rao', expertise: 'Policy & Public Administration', department: 'GAD', coiDeclared: false, coiDetails: '' }
-    ],
-
-        evaluationRubric: [
-        { category: 'Technical Feasibility', weight: 25, maxScore: 10, description: 'Technical and operational feasibility within government infrastructure constraints' },
-        { category: 'Innovation & Novelty', weight: 20, maxScore: 10, description: 'Novelty of approach, technology differentiation, and creative problem solving' },
-        { category: 'Alignment with Outcomes', weight: 25, maxScore: 10, description: 'Direct alignment with departmental problem statement and measurable baseline targets' },
-        { category: 'Cost Effectiveness', weight: 15, maxScore: 10, description: 'Value for money, total cost of ownership, and budget efficiency' },
-        { category: 'Scalability & Replication', weight: 15, maxScore: 10, description: 'Ability to scale across multiple departments, 36 districts, and state agencies' }
-    ],
-
-    evaluationScores: [
-        { startupId: 'SU-001', challengeId: 'CH-001', evaluatorId: 'EV-001', scores: { innovation: 9, feasibility: 8, scalability: 7, cost: 8 }, comments: 'Excellent AI model accuracy. Strong drone integration. Good cost-value ratio.' },
-        { startupId: 'SU-001', challengeId: 'CH-001', evaluatorId: 'EV-003', scores: { innovation: 8, feasibility: 9, scalability: 8, cost: 7 }, comments: 'Well-aligned with government infrastructure needs. Scalable approach.' },
-        { startupId: 'SU-004', challengeId: 'CH-004', evaluatorId: 'EV-001', scores: { innovation: 8, feasibility: 9, scalability: 9, cost: 8 }, comments: 'Strong NLP capabilities. Marathi language support is critical differentiator.' },
-        { startupId: 'SU-004', challengeId: 'CH-004', evaluatorId: 'EV-003', scores: { innovation: 7, feasibility: 8, scalability: 8, cost: 9 }, comments: 'Very cost-effective. Good citizen engagement potential.' },
-        { startupId: 'SU-002', challengeId: 'CH-002', evaluatorId: 'EV-001', scores: { innovation: 7, feasibility: 7, scalability: 6, cost: 8 }, comments: 'Good IoT approach but scalability needs improvement.' },
-        { startupId: 'SU-002', challengeId: 'CH-002', evaluatorId: 'EV-002', scores: { innovation: 6, feasibility: 8, scalability: 7, cost: 7 }, comments: 'Feasible for municipal deployment. Need larger sensor network for scale.' }
-    ],
-
-    // --- MODULE 5: PILOTS ---
-    pilots: [
-        { id: 'PLT-001', challengeId: 'CH-001', startupId: 'SU-001', name: 'AI Highway Inspection Pilot', duration: '8 weeks', startDate: '2026-06-01', endDate: '2026-07-27', location: 'NH-48 Corridor, Maharashtra (Sector 12, 18, 24 Bridges)', riskLevel: 'Medium', status: 'Completed', kpiTargets: [{ name: 'Inspection Time Reduction', baseline: '10 hrs', target: '6 hrs' }, { name: 'Defect Detection Accuracy', baseline: '82%', target: '90%' }, { name: 'User Satisfaction', baseline: '6/10', target: '8/10' }], dataScope: ['Bridge inspection images', 'GIS asset data', 'Structural assessment reports'], safeguards: ['Dedicated sandbox environment', 'No production data access', 'Weekly security audits', 'Manual verification of AI outputs'], successThresholds: 'All KPIs met with no critical security incidents' },
-        { id: 'PLT-002', challengeId: 'CH-002', startupId: 'SU-002', name: 'Smart Water Monitoring Pilot', duration: '12 weeks', startDate: '2026-08-01', endDate: '2026-10-24', location: 'Pune Municipal Corporation — Zone 3', riskLevel: 'Low', status: 'Active', kpiTargets: [{ name: 'Leak Detection Rate', baseline: '40%', target: '85%' }, { name: 'Response Time', baseline: '48 hrs', target: '4 hrs' }], dataScope: ['Water flow sensor data', 'Pipeline network maps'], safeguards: ['IoT device isolation', 'Encrypted data transmission', 'Weekly reviews'], successThresholds: 'Leak detection rate above 75%' }
-    ],
-
-    // --- MODULE 6: MILESTONES ---
-    milestones: [
-        { id: 'MS-001', pilotId: 'PLT-001', name: 'Setup & Agreement', description: 'Complete pilot agreement, configure sandbox, train inspection team', status: 'Completed', dueDate: '2026-06-14', completedDate: '2026-06-12', paymentLinked: true, paymentAmount: 100000 },
-        { id: 'MS-002', pilotId: 'PLT-001', name: 'Deployment & Integration', description: 'Deploy AI system, connect GIS APIs, run end-to-end sandbox tests', status: 'Completed', dueDate: '2026-06-28', completedDate: '2026-06-25', paymentLinked: true, paymentAmount: 150000 },
-        { id: 'MS-003', pilotId: 'PLT-001', name: 'Active Pilot Execution', description: 'Run 100 bridge inspections, collect KPI data, bi-weekly reviews', status: 'Completed', dueDate: '2026-07-19', completedDate: '2026-07-18', paymentLinked: true, paymentAmount: 150000 },
-        { id: 'MS-004', pilotId: 'PLT-001', name: 'Final Evaluation & Report', description: 'Complete evaluation, generate final report, committee review', status: 'Completed', dueDate: '2026-07-27', completedDate: '2026-07-26', paymentLinked: true, paymentAmount: 100000 },
-        { id: 'MS-005', pilotId: 'PLT-002', name: 'Sensor Network Deployment', description: 'Install 50 IoT sensors across Zone 3 pipeline network', status: 'Completed', dueDate: '2026-08-15', completedDate: '2026-08-14', paymentLinked: true, paymentAmount: 200000 },
-        { id: 'MS-006', pilotId: 'PLT-002', name: 'Data Collection & Calibration', description: 'Collect baseline data, calibrate leak detection algorithms', status: 'In Progress', dueDate: '2026-09-15', completedDate: null, paymentLinked: true, paymentAmount: 200000 },
-        { id: 'MS-007', pilotId: 'PLT-002', name: 'Performance Assessment', description: 'Full-scale testing and KPI measurement', status: 'Pending', dueDate: '2026-10-10', completedDate: null, paymentLinked: true, paymentAmount: 200000 },
-        { id: 'MS-008', pilotId: 'PLT-002', name: 'Final Report & Decision', description: 'Generate evaluation report and scale-up recommendation', status: 'Pending', dueDate: '2026-10-24', completedDate: null, paymentLinked: true, paymentAmount: 100000 }
-    ],
-
-    agreementClauses: [
-        { id: 'CL-1', category: 'IP Ownership', text: 'All intellectual property developed during the pilot shall remain with the startup. The Government retains a perpetual, non-exclusive license to use the solution for government purposes.' },
-        { id: 'CL-2', category: 'Data Rights', text: 'Government data used during the pilot remains government property. The startup shall not retain, copy, or use government data beyond the pilot scope without written approval.' },
-        { id: 'CL-3', category: 'Cybersecurity', text: 'The startup must comply with CERT-In guidelines and pass a security assessment before deployment. All data must be encrypted at rest (AES-256) and in transit (TLS 1.3).' },
-        { id: 'CL-4', category: 'Liability & Indemnity', text: 'The startup shall indemnify the Government against any losses arising from system failures, data breaches, or regulatory non-compliance during the pilot period.' },
-        { id: 'CL-5', category: 'Termination', text: 'Either party may terminate the pilot with 14 days written notice. All government data must be returned and securely deleted (NIST 800-88) within 7 days of termination.' },
-        { id: 'CL-6', category: 'Confidentiality', text: 'Both parties shall maintain strict confidentiality of all shared information for a period of 3 years beyond pilot completion, subject to RTI Act provisions.' }
-    ],
-
-    // --- MODULE 7: KPI READINGS ---
-    kpiReadings: [
-        { id: 'KPI-001', pilotId: 'PLT-001', name: 'Inspection Time', unit: 'hours', baseline: 10, target: 6, current: 5.8, minAcceptable: 7, readings: [{ week: 1, value: 9.5 }, { week: 2, value: 8.2 }, { week: 3, value: 7.1 }, { week: 4, value: 6.5 }, { week: 5, value: 6.1 }, { week: 6, value: 5.9 }, { week: 7, value: 5.8 }, { week: 8, value: 5.8 }], direction: 'lower', status: 'Achieved' },
-        { id: 'KPI-002', pilotId: 'PLT-001', name: 'Defect Detection Accuracy', unit: '%', baseline: 82, target: 90, current: 91, minAcceptable: 85, readings: [{ week: 1, value: 83 }, { week: 2, value: 85 }, { week: 3, value: 87 }, { week: 4, value: 88 }, { week: 5, value: 89 }, { week: 6, value: 90 }, { week: 7, value: 91 }, { week: 8, value: 91 }], direction: 'higher', status: 'Achieved' },
-        { id: 'KPI-003', pilotId: 'PLT-001', name: 'User Satisfaction Score', unit: '/10', baseline: 6, target: 8, current: 8.5, minAcceptable: 7, readings: [{ week: 1, value: 6.2 }, { week: 2, value: 6.8 }, { week: 3, value: 7.2 }, { week: 4, value: 7.5 }, { week: 5, value: 7.8 }, { week: 6, value: 8.1 }, { week: 7, value: 8.3 }, { week: 8, value: 8.5 }], direction: 'higher', status: 'Achieved' },
-        { id: 'KPI-004', pilotId: 'PLT-002', name: 'Leak Detection Rate', unit: '%', baseline: 40, target: 85, current: 62, minAcceptable: 60, readings: [{ week: 1, value: 42 }, { week: 2, value: 48 }, { week: 3, value: 55 }, { week: 4, value: 62 }], direction: 'higher', status: 'On Track' },
-        { id: 'KPI-005', pilotId: 'PLT-002', name: 'Response Time', unit: 'hours', baseline: 48, target: 4, current: 12, minAcceptable: 8, readings: [{ week: 1, value: 44 }, { week: 2, value: 32 }, { week: 3, value: 20 }, { week: 4, value: 12 }], direction: 'lower', status: 'On Track' }
-    ],
-
-    // --- MODULE 8: PAYMENTS ---
-    payments: [
-        { id: 'PAY-001', milestoneId: 'MS-001', pilotId: 'PLT-001', amount: 100000, status: 'Released', requestDate: '2026-06-13', approvalDate: '2026-06-14', releaseDate: '2026-06-16', escrowHeld: false },
-        { id: 'PAY-002', milestoneId: 'MS-002', pilotId: 'PLT-001', amount: 150000, status: 'Released', requestDate: '2026-06-26', approvalDate: '2026-06-27', releaseDate: '2026-06-30', escrowHeld: false },
-        { id: 'PAY-003', milestoneId: 'MS-003', pilotId: 'PLT-001', amount: 150000, status: 'Released', requestDate: '2026-07-19', approvalDate: '2026-07-20', releaseDate: '2026-07-22', escrowHeld: false },
-        { id: 'PAY-004', milestoneId: 'MS-004', pilotId: 'PLT-001', amount: 100000, status: 'Released', requestDate: '2026-07-27', approvalDate: '2026-07-28', releaseDate: '2026-07-30', escrowHeld: false },
-        { id: 'PAY-005', milestoneId: 'MS-005', pilotId: 'PLT-002', amount: 200000, status: 'Released', requestDate: '2026-08-15', approvalDate: '2026-08-16', releaseDate: '2026-08-18', escrowHeld: false },
-        { id: 'PAY-006', milestoneId: 'MS-006', pilotId: 'PLT-002', amount: 200000, status: 'In Escrow', requestDate: null, approvalDate: null, releaseDate: null, escrowHeld: true },
-        { id: 'PAY-007', milestoneId: 'MS-007', pilotId: 'PLT-002', amount: 200000, status: 'Pending', requestDate: null, approvalDate: null, releaseDate: null, escrowHeld: true },
-        { id: 'PAY-008', milestoneId: 'MS-008', pilotId: 'PLT-002', amount: 100000, status: 'Pending', requestDate: null, approvalDate: null, releaseDate: null, escrowHeld: true }
-    ],
-
-    // --- MODULE 9: SCALE-UP ---
-    scaleupDecisions: [
-        { pilotId: 'PLT-001', successScore: 92, recommendation: 'Scale to Full Procurement', reasoning: 'All 3 KPIs exceeded targets. Inspection time reduced by 42% (target was 40%). Defect accuracy 91% (target 90%). User satisfaction 8.5/10 (target 8). No critical security or safety incidents. Strong user adoption across all 10 engineers.', procurementPathway: 'GFR Rule 194 — Innovation Procurement Framework', gemListingDraft: { itemName: 'AI-Powered Infrastructure Inspection System', category: 'Software — AI/ML Solutions', estimatedValue: '₹2.5 Crore', specifications: 'Drone-based computer vision defect detection for bridge and highway inspection. Includes edge AI processing, GIS integration, and automated reporting.' }, transitionSteps: ['Complete final validator sign-off', 'Prepare GeM listing draft', 'Submit to department procurement committee', 'Issue RFP under GFR Rule 194', 'Contract award and phased deployment across 12 highway divisions'] },
-        { pilotId: 'PLT-002', successScore: null, recommendation: 'Pilot In Progress', reasoning: 'Pilot is currently active (Week 4 of 12). KPIs showing positive trends. Decision pending pilot completion in October 2026.', procurementPathway: null, gemListingDraft: null, transitionSteps: [] }
-    ],
-
-    // --- MODULE 10: ADMIN & GOVERNANCE ---
-    users: [
-        { id: 'USR-001', name: 'Shri Rajesh Verma', role: 'Dept Admin', email: 'rajesh.verma@maharashtra.gov.in', department: 'PWD', lastLogin: '2026-08-27 09:15', status: 'Active' },
-        { id: 'USR-002', name: 'Dr. Vikram Sen', role: 'Startup', email: 'vikram@inspectai.com', department: 'InspectAI Technologies', lastLogin: '2026-08-26 16:30', status: 'Active' },
-        { id: 'USR-003', name: 'Dr. Priya Sharma', role: 'Evaluator', email: 'priya.sharma@maharashtra.gov.in', department: 'IT Department', lastLogin: '2026-08-25 11:00', status: 'Active' },
-        { id: 'USR-004', name: 'Shri Amit Patel', role: 'Evaluator', email: 'amit.patel@maharashtra.gov.in', department: 'PWD', lastLogin: '2026-08-24 14:20', status: 'Active' },
-        { id: 'USR-005', name: 'Smt. Kavita Deshmukh', role: 'Validator', email: 'kavita.d@maharashtra.gov.in', department: 'Finance Department', lastLogin: '2026-08-27 10:00', status: 'Active' },
-        { id: 'USR-006', name: 'Shri Anil Kumar', role: 'Super Admin', email: 'anil.kumar@maharashtra.gov.in', department: 'MSInS', lastLogin: '2026-08-27 08:45', status: 'Active' }
-    ],
-
-    // Super Admin NOT available in registration — pre-seeded only
-    roleDefinitions: [
-        { role: 'Super Admin', permissions: ['All modules', 'User management', 'System configuration', 'Audit access', 'Role assignment'], description: 'Full system access — pre-configured, not available in registration', registerable: false },
-        { role: 'Dept Admin', permissions: ['Challenge creation', 'Pilot management', 'Payment approval', 'Reports', 'User viewing'], description: 'Department-level administration and pilot oversight', registerable: true },
-        { role: 'Evaluator', permissions: ['Evaluation scoring', 'Startup review', 'COI declaration', 'Report viewing'], description: 'Expert evaluation and scoring for startup proposals', registerable: true },
-        { role: 'Startup', permissions: ['Profile management', 'Challenge application', 'Milestone submission', 'Evidence upload', 'Payment tracking'], description: 'Startup participant with self-service access', registerable: true },
-        { role: 'Validator', permissions: ['Audit trail review', 'Sign-off workflow', 'Compliance verification', 'Financial audit'], description: 'Independent validation and audit oversight', registerable: true }
-    ],
-
-    auditTrail: [
-        { id: 1, timestamp: '2026-08-27 09:15:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Login', module: 'System', detail: 'User logged in from IP 192.168.1.100' },
-        { id: 2, timestamp: '2026-08-27 09:20:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Dashboard View', module: 'Dashboard', detail: 'Accessed main monitoring dashboard' },
-        { id: 3, timestamp: '2026-08-26 16:30:00', user: 'Dr. Vikram Sen', role: 'Startup', action: 'Evidence Upload', module: 'Milestones', detail: 'Uploaded sensor calibration report for MS-006' },
-        { id: 4, timestamp: '2026-08-26 14:00:00', user: 'Dr. Priya Sharma', role: 'Evaluator', action: 'Score Submission', module: 'Evaluation', detail: 'Submitted evaluation scores for SU-001 against CH-001' },
-        { id: 5, timestamp: '2026-08-25 11:30:00', user: 'Smt. Kavita Deshmukh', role: 'Validator', action: 'Sign-off Approved', module: 'Audit', detail: 'Validated and signed off on PLT-001 final evaluation report' },
-        { id: 6, timestamp: '2026-08-25 10:00:00', user: 'Shri Anil Kumar', role: 'Super Admin', action: 'User Created', module: 'Admin', detail: 'Created evaluator account for Dr. Sunita Rao (EV-003)' },
-        { id: 7, timestamp: '2026-08-24 15:00:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Payment Approved', module: 'Payments', detail: 'Approved milestone payment PAY-005 of ₹2,00,000 for MS-005' },
-        { id: 8, timestamp: '2026-08-24 09:00:00', user: 'Shri Rajesh Verma', role: 'Dept Admin', action: 'Challenge Published', module: 'Challenges', detail: 'Published challenge CH-002: Smart Water Leakage Detection System' },
-        { id: 9, timestamp: '2026-08-23 14:00:00', user: 'Dr. Vikram Sen', role: 'Startup', action: 'Profile Updated', module: 'Startups', detail: 'Updated company profile and added NHAI pilot reference' },
-        { id: 10, timestamp: '2026-08-22 11:00:00', user: 'Smt. Kavita Deshmukh', role: 'Validator', action: 'Compliance Check', module: 'Eligibility', detail: 'Verified eligibility screening results for SU-001' },
-        { id: 11, timestamp: '2026-08-20 16:00:00', user: 'Shri Anil Kumar', role: 'Super Admin', action: 'Config Change', module: 'Admin', detail: 'Updated eligibility relaxation criteria for Startup India exemptions' },
-        { id: 12, timestamp: '2026-08-19 10:30:00', user: 'Dr. Priya Sharma', role: 'Evaluator', action: 'COI Declaration', module: 'Evaluation', detail: 'Declared no conflict of interest for CH-001 evaluation panel' }
-    ],
-
-    validatorSignoffs: [
-        { id: 'VS-001', pilotId: 'PLT-001', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Final Evaluation', status: 'Signed Off', signoffDate: '2026-08-25 11:30', comments: 'All processes followed per GFR Rule 194. Documentation complete. Recommend scale-up.' },
-        { id: 'VS-002', pilotId: 'PLT-001', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Financial Audit', status: 'Signed Off', signoffDate: '2026-08-25 12:00', comments: 'All 4 payments verified against milestone completion. Budget ₹5L of ₹5L utilized within approved limits.' },
-        { id: 'VS-003', pilotId: 'PLT-002', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Eligibility Verification', status: 'Signed Off', signoffDate: '2026-08-22 11:00', comments: 'AquaSense IoT eligibility verified under Startup India relaxed criteria.' },
-        { id: 'VS-004', pilotId: 'PLT-002', validatorId: 'USR-005', validatorName: 'Smt. Kavita Deshmukh', module: 'Milestone MS-006 Review', status: 'Pending', signoffDate: null, comments: '' }
-    ],
-
-    currentRole: 'dept_admin'
-};
-
-
-// ============================================
-// SECTION 3: UTILITY FUNCTIONS
+// SECTION 2: PLATFORM DATA STORE
 // ============================================
 window.GovUtils = {
 
@@ -380,40 +121,515 @@ window.GovUtils = {
         return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     },
 
-    // Show toast notification
-    showToast(message, type = 'info') {
+    // Enhanced Toast notification system with titles, action buttons, progress bars & sound
+    showToast(options, legacyType = 'info') {
+        let title, message, type, duration, actionText, onAction, sound, pushToCenter;
+
+        if (typeof options === 'string') {
+            message = options;
+            type = legacyType;
+            title = type === 'success' ? 'Success' : (type === 'error' ? 'Error' : (type === 'warning' ? 'Warning' : 'Notification'));
+            duration = 4000;
+        } else if (typeof options === 'object' && options !== null) {
+            message = options.message || '';
+            type = options.type || 'info';
+            title = options.title || (type === 'success' ? 'Success' : (type === 'error' ? 'Error' : (type === 'critical' ? 'Critical Alert' : (type === 'warning' ? 'Warning' : 'Notification'))));
+            duration = options.duration !== undefined ? options.duration : (type === 'critical' ? 7000 : 4500);
+            actionText = options.actionText || null;
+            onAction = options.onAction || null;
+            sound = options.sound || (type === 'critical');
+            pushToCenter = options.pushToCenter !== false;
+        } else {
+            return;
+        }
+
         let container = document.querySelector('.toast-container-gov');
         if (!container) {
             container = document.createElement('div');
             container.className = 'toast-container-gov';
+            container.setAttribute('aria-live', 'polite');
+            container.setAttribute('role', 'region');
             document.body.appendChild(container);
         }
+
+        // Limit active toasts to max 5 to prevent overflow
+        const existingToasts = container.querySelectorAll('.gov-toast');
+        if (existingToasts.length >= 5) {
+            existingToasts[0].remove();
+        }
+
+        const icons = {
+            success: '<i class="bi bi-check-circle-fill"></i>',
+            error: '<i class="bi bi-x-circle-fill"></i>',
+            critical: '<i class="bi bi-exclamation-triangle-fill"></i>',
+            warning: '<i class="bi bi-exclamation-circle-fill"></i>',
+            info: '<i class="bi bi-info-circle-fill"></i>'
+        };
+
         const toast = document.createElement('div');
         toast.className = `gov-toast t-${type}`;
-        const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
-        toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
+
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        toast.innerHTML = `
+            <div class="gov-toast-icon-box">
+                ${icons[type] || icons.info}
+            </div>
+            <div class="gov-toast-content">
+                <div class="gov-toast-header-row">
+                    <span class="gov-toast-title">${title}</span>
+                    <span class="gov-toast-time">${timeStr}</span>
+                </div>
+                <div class="gov-toast-message">${message}</div>
+                ${actionText ? `
+                    <div class="gov-toast-actions">
+                        <button class="btn-toast-action" id="btn-toast-act-${Date.now()}">${actionText}</button>
+                    </div>
+                ` : ''}
+            </div>
+            <button class="btn-toast-close" aria-label="Dismiss">&times;</button>
+            ${duration > 0 ? `<div class="gov-toast-progress"></div>` : ''}
+        `;
+
         container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            toast.style.transition = '0.3s';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
+
+        // Sound chime synthesis
+        if (sound) {
+            this.playToastSound(type);
+        }
+
+        // Bind Action Callback
+        if (actionText && typeof onAction === 'function') {
+            const actBtn = toast.querySelector('.btn-toast-action');
+            if (actBtn) {
+                actBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    onAction();
+                    dismissToast();
+                });
+            }
+        }
+
+        // Bind Close Button
+        const closeBtn = toast.querySelector('.btn-toast-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => dismissToast());
+        }
+
+        // Timer & Progress Animation with Pause on Hover
+        let startTime = Date.now();
+        let remainingTime = duration;
+        let timer = null;
+        const progressBar = toast.querySelector('.gov-toast-progress');
+
+        function startTimer() {
+            if (duration <= 0) return;
+            startTime = Date.now();
+            if (progressBar) {
+                progressBar.style.transition = `transform ${remainingTime}ms linear`;
+                progressBar.style.transform = 'scaleX(0)';
+            }
+            timer = setTimeout(() => {
+                dismissToast();
+            }, remainingTime);
+        }
+
+        function pauseTimer() {
+            if (duration <= 0 || !timer) return;
+            clearTimeout(timer);
+            timer = null;
+            const elapsed = Date.now() - startTime;
+            remainingTime = Math.max(0, remainingTime - elapsed);
+            if (progressBar) {
+                const currentWidth = (remainingTime / duration);
+                progressBar.style.transition = 'none';
+                progressBar.style.transform = `scaleX(${currentWidth})`;
+            }
+        }
+
+        function dismissToast() {
+            if (timer) clearTimeout(timer);
+            toast.classList.add('toast-hiding');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }
+
+        if (duration > 0) {
+            startTimer();
+            toast.addEventListener('mouseenter', pauseTimer);
+            toast.addEventListener('mouseleave', () => startTimer());
+        }
+
+        // Optional push to Notification Center
+        if (pushToCenter && window.GovUtils.NotificationCenter) {
+            window.GovUtils.NotificationCenter.addNotification({
+                title,
+                message,
+                type,
+                isCritical: type === 'critical' || type === 'error',
+                skipToast: true
+            });
+        }
     },
 
-    // Open modal
+    // Synthesize web audio tone for alerts
+    playToastSound(type = 'info') {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            if (type === 'critical' || type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.setValueAtTime(440, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.25);
+            }
+        } catch (e) {
+            // Audio context blocked or unsupported
+        }
+    },
+
+    // Notification Center & Alert Drawer Manager
+    NotificationCenter: {
+        storageKey: 'gov_notifications_v1',
+        activeTab: 'all',
+
+        getNotifications() {
+            try {
+                const stored = localStorage.getItem(this.storageKey);
+                if (stored) return JSON.parse(stored);
+            } catch (e) {}
+
+            // Initial Default Notifications
+            const defaults = [
+                {
+                    id: 'notif-1',
+                    title: 'GFR Rule 194 Threshold Engine Active',
+                    message: 'Real-time telemetry SLA monitoring initialized for sandbox pilots.',
+                    type: 'info',
+                    time: new Date(Date.now() - 3600000).toISOString(),
+                    read: false,
+                    isCritical: false
+                },
+                {
+                    id: 'notif-2',
+                    title: 'DPIIT Relaxation Matrix Updated',
+                    message: 'Startup exemption rules for 3-year turnover waived under Maharashtra Procurement Policy.',
+                    type: 'success',
+                    time: new Date(Date.now() - 7200000).toISOString(),
+                    read: false,
+                    isCritical: false
+                }
+            ];
+            localStorage.setItem(this.storageKey, JSON.stringify(defaults));
+            return defaults;
+        },
+
+        saveNotifications(items) {
+            try {
+                localStorage.setItem(this.storageKey, JSON.stringify(items));
+            } catch (e) {}
+            this.updateBadge();
+            this.renderBody();
+        },
+
+        addNotification(item) {
+            const items = this.getNotifications();
+            const newNotif = {
+                id: 'notif-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+                title: item.title || 'Notification',
+                message: item.message || '',
+                type: item.type || 'info',
+                time: item.time || new Date().toISOString(),
+                read: false,
+                isCritical: !!item.isCritical,
+                actionUrl: item.actionUrl || null
+            };
+            items.unshift(newNotif);
+            if (items.length > 30) items.pop();
+            this.saveNotifications(items);
+
+            if (!item.skipToast && window.GovUtils.showToast) {
+                window.GovUtils.showToast({
+                    title: newNotif.title,
+                    message: newNotif.message,
+                    type: newNotif.type,
+                    pushToCenter: false
+                });
+            }
+        },
+
+        markAllAsRead() {
+            const items = this.getNotifications().map(n => ({ ...n, read: true }));
+            this.saveNotifications(items);
+        },
+
+        markAsRead(id) {
+            const items = this.getNotifications().map(n => n.id === id ? { ...n, read: true } : n);
+            this.saveNotifications(items);
+        },
+
+        clearAll() {
+            this.saveNotifications([]);
+        },
+
+        updateBadge() {
+            const badgeEl = document.getElementById('gov-notif-badge-count');
+            if (!badgeEl) return;
+            const items = this.getNotifications();
+            const unreadCount = items.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badgeEl.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badgeEl.style.display = 'flex';
+            } else {
+                badgeEl.style.display = 'none';
+            }
+        },
+
+        init() {
+            this.injectHeaderBell();
+            this.injectDrawerDom();
+            this.updateBadge();
+        },
+
+        injectHeaderBell() {
+            if (document.getElementById('gov-notif-bell-container')) return;
+
+            const topBar = document.querySelector('.top-bar-clean .container');
+            if (!topBar) return;
+
+            const bellHtml = `
+                <div class="top-bar-clean-right" id="gov-notif-bell-container">
+                    <button class="gov-notif-bell-btn" id="btn-gov-notif-bell" title="View Notifications & SLA Alerts" aria-label="Notifications">
+                        <i class="bi bi-bell-fill"></i>
+                        <span class="gov-notif-badge" id="gov-notif-badge-count" style="display: none;">0</span>
+                    </button>
+                </div>
+            `;
+
+            const hamburger = document.getElementById('gov-hamburger-toggle');
+            if (hamburger && hamburger.parentNode === topBar) {
+                hamburger.insertAdjacentHTML('beforebegin', bellHtml);
+            } else {
+                topBar.insertAdjacentHTML('beforeend', bellHtml);
+            }
+
+            const bellBtn = document.getElementById('btn-gov-notif-bell');
+            if (bellBtn) {
+                bellBtn.addEventListener('click', () => this.toggleDrawer());
+            }
+        },
+
+        injectDrawerDom() {
+            if (document.getElementById('gov-notif-drawer-panel')) return;
+
+            const drawerHtml = `
+                <div class="gov-notif-overlay" id="gov-notif-overlay"></div>
+                <div class="gov-notif-drawer" id="gov-notif-drawer-panel">
+                    <div class="gov-notif-header">
+                        <h5><i class="bi bi-bell me-2"></i>Notifications &amp; Alerts</h5>
+                        <button class="gov-notif-close-btn" id="gov-notif-close-btn">&times;</button>
+                    </div>
+                    <div class="gov-notif-tabs">
+                        <button class="gov-notif-tab-btn active" data-tab="all">All</button>
+                        <button class="gov-notif-tab-btn" data-tab="critical">Critical SLA</button>
+                        <button class="gov-notif-tab-btn" data-tab="updates">System</button>
+                    </div>
+                    <div class="gov-notif-actions-bar">
+                        <button class="btn btn-xs btn-outline-primary py-1 px-2" id="btn-notif-mark-read" style="font-size: 11px;">
+                            <i class="bi bi-check2-all me-1"></i>Mark all read
+                        </button>
+                        <button class="btn btn-xs btn-outline-danger py-1 px-2" id="btn-notif-simulate" style="font-size: 11px;" title="Test Real-Time Alert Toast">
+                            <i class="bi bi-lightning-fill me-1"></i>Simulate Alert
+                        </button>
+                    </div>
+                    <div class="gov-notif-body" id="gov-notif-body-list">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', drawerHtml);
+
+            document.getElementById('gov-notif-overlay').addEventListener('click', () => this.closeDrawer());
+            document.getElementById('gov-notif-close-btn').addEventListener('click', () => this.closeDrawer());
+            document.getElementById('btn-notif-mark-read').addEventListener('click', () => this.markAllAsRead());
+            document.getElementById('btn-notif-simulate').addEventListener('click', () => this.simulateTestAlert());
+
+            document.querySelectorAll('.gov-notif-tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.gov-notif-tab-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    this.activeTab = e.currentTarget.dataset.tab;
+                    this.renderBody();
+                });
+            });
+        },
+
+        toggleDrawer() {
+            const drawer = document.getElementById('gov-notif-drawer-panel');
+            const overlay = document.getElementById('gov-notif-overlay');
+            if (!drawer) return;
+
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                this.closeDrawer();
+            } else {
+                this.renderBody();
+                drawer.classList.add('open');
+                if (overlay) overlay.classList.add('show');
+            }
+        },
+
+        closeDrawer() {
+            const drawer = document.getElementById('gov-notif-drawer-panel');
+            const overlay = document.getElementById('gov-notif-overlay');
+            if (drawer) drawer.classList.remove('open');
+            if (overlay) overlay.classList.remove('show');
+        },
+
+        renderBody() {
+            const bodyEl = document.getElementById('gov-notif-body-list');
+            if (!bodyEl) return;
+
+            let items = this.getNotifications();
+
+            if (this.activeTab === 'critical') {
+                items = items.filter(i => i.isCritical || i.type === 'critical' || i.type === 'error');
+            } else if (this.activeTab === 'updates') {
+                items = items.filter(i => !i.isCritical && i.type !== 'critical' && i.type !== 'error');
+            }
+
+            if (items.length === 0) {
+                bodyEl.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-bell-slash fs-2 d-block mb-2 text-secondary"></i>
+                        <p class="small mb-0">No notifications found in this view.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const icons = {
+                success: 'bi-check-circle-fill text-success bg-success-subtle',
+                error: 'bi-exclamation-triangle-fill text-danger bg-danger-subtle',
+                critical: 'bi-lightning-charge-fill text-danger bg-danger-subtle',
+                warning: 'bi-exclamation-circle-fill text-warning bg-warning-subtle',
+                info: 'bi-info-circle-fill text-primary bg-primary-subtle'
+            };
+
+            bodyEl.innerHTML = items.map(n => {
+                const timeAgo = this.formatTimeAgo(n.time);
+                const iconClass = icons[n.type] || icons.info;
+
+                return `
+                    <div class="gov-notif-item ${!n.read ? 'unread' : ''} ${n.isCritical ? 'is-critical' : ''}" data-id="${n.id}">
+                        <div class="gov-notif-item-icon">
+                            <i class="bi ${iconClass.split(' ')[0]} ${iconClass.split(' ')[1]}"></i>
+                        </div>
+                        <div class="gov-notif-item-content">
+                            <div class="gov-notif-item-title">${n.title}</div>
+                            <div class="gov-notif-item-msg">${n.message}</div>
+                            <div class="gov-notif-item-meta">
+                                <span><i class="bi bi-clock me-1"></i>${timeAgo}</span>
+                                ${!n.read ? `<a href="#" class="text-primary text-decoration-none btn-mark-item-read" data-id="${n.id}">Mark read</a>` : '<span class="text-muted"><i class="bi bi-check-all"></i> Read</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            bodyEl.querySelectorAll('.btn-mark-item-read').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = e.currentTarget.dataset.id;
+                    this.markAsRead(id);
+                });
+            });
+
+            bodyEl.querySelectorAll('.gov-notif-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('btn-mark-item-read')) return;
+                    const id = item.dataset.id;
+                    this.markAsRead(id);
+                });
+            });
+        },
+
+        formatTimeAgo(timeStr) {
+            if (!timeStr) return 'Just now';
+            const diff = Math.floor((new Date() - new Date(timeStr)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
+        },
+
+        simulateTestAlert() {
+            window.GovUtils.showToast({
+                title: 'CRITICAL SLA BREACH DETECTED',
+                message: 'Sandbox Pilot [PLT-8821]: Fuel Efficiency parameter dropped 24.5% below SLA baseline.',
+                type: 'critical',
+                actionText: 'View Pilot M&E',
+                onAction: () => {
+                    window.location.href = 'performance.html';
+                },
+                duration: 8000,
+                sound: true,
+                pushToCenter: true
+            });
+        }
+    },
+
+    // Open modal (auto-injecting overlay if missing)
     openModal(title, contentHtml) {
-        const overlay = document.getElementById('gov-modal-overlay');
-        if (!overlay) return;
-        document.getElementById('gov-modal-title').textContent = title;
-        document.getElementById('gov-modal-body').innerHTML = contentHtml;
+        let overlay = document.getElementById('gov-modal-overlay');
+        if (!overlay) {
+            const modalHtml = `
+                <div class="gov-modal-overlay" id="gov-modal-overlay">
+                    <div class="gov-modal">
+                        <div class="gov-modal-header">
+                            <h5 id="gov-modal-title">Modal Title</h5>
+                            <button class="gov-modal-close" id="gov-modal-close" onclick="GovUtils.closeModal()">&times;</button>
+                        </div>
+                        <div class="gov-modal-body" id="gov-modal-body"></div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            overlay = document.getElementById('gov-modal-overlay');
+        }
+        const titleEl = document.getElementById('gov-modal-title');
+        const bodyEl = document.getElementById('gov-modal-body');
+        if (titleEl) titleEl.textContent = title;
+        if (bodyEl) bodyEl.innerHTML = contentHtml;
         overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
     },
 
     // Close modal
     closeModal() {
         const overlay = document.getElementById('gov-modal-overlay');
         if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
     },
 
     // Get badge class for status
@@ -466,6 +682,11 @@ window.GovUtils = {
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     const page = window.location.pathname.split('/').pop() || 'index.html';
+
+    // Initialize Notification Center & Header Bell
+    if (window.GovUtils && window.GovUtils.NotificationCenter) {
+        window.GovUtils.NotificationCenter.init();
+    }
 
     // Inject Exact Full-Screen Mega Menu Overlay (india.gov.in style with GovCatalyst content)
     if (!document.getElementById('gov-mega-menu-overlay')) {
@@ -1005,16 +1226,9 @@ window.GovAuth = {
         }
 
         // 3. New / Unregistered
-        return {
-            status: 'unregistered',
-            promptHtml: `<div class="alert alert-secondary d-flex align-items-center mb-3">
-                <i class="bi bi-info-circle-fill fs-4 me-3 text-secondary"></i>
-                <div>
-                    <strong>Account Not Found</strong>
-                    <div class="small">No account found with this email. Please register as a Startup or submit a Government Official request.</div>
-                </div>
-            </div>`
-        };
+        // When connected to the live backend, we shouldn't assume the account is not found 
+        // just because it's not in the mock array.
+        return null;
     },
 
     openAuthModal(defaultTab = 'login') {
@@ -1027,6 +1241,17 @@ window.GovAuth = {
             modalEl.classList.add('show');
             document.body.style.overflow = 'hidden';
             this.switchTab(defaultTab);
+            const user = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser());
+            const promptContainer = document.getElementById('auth-status-prompt');
+            if (user && promptContainer) {
+                promptContainer.innerHTML = `<div class="alert alert-info d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <i class="bi bi-person-check-fill me-2 text-primary"></i>
+                        Signed in as <strong>${user.name || user.email}</strong> (<em>${user.role}</em>)
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="GovPageAuth.logout()">Sign Out</button>
+                </div>`;
+            }
         }
     },
 
@@ -1092,7 +1317,7 @@ window.GovAuth = {
                                 <label class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                    <input type="password" class="form-control" id="login-password" value="Password@123" required>
+                                    <input type="password" class="form-control" id="login-password" required>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1187,9 +1412,15 @@ window.GovAuth = {
                                     <input type="text" class="form-control form-control-sm" id="reg-gov-desig" placeholder="e.g. Executive Engineer" required>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small">Government Department / Institutional Body <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-sm" id="reg-gov-dept" placeholder="e.g. Public Works Department / Water Supply Dept" required>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Government Department / Institutional Body <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="reg-gov-dept" placeholder="e.g. Public Works Department" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Create Password <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control form-control-sm" id="reg-gov-pwd" placeholder="Minimum 8 characters" required>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-gov w-100 py-2">
                                 <i class="bi bi-send-check me-1"></i> Submit Official Verification Request
@@ -1239,18 +1470,77 @@ window.GovAuth = {
         }
     },
 
-    handleLoginSubmit() {
-        const email = document.getElementById('login-email')?.value;
-        const res = this.checkAccountStatus(email);
+    async handleLoginSubmit() {
+        const email = document.getElementById('login-email')?.value?.trim();
+        const password = document.getElementById('login-password')?.value;
         const promptContainer = document.getElementById('auth-status-prompt');
+
+        try {
+            // Attempt live backend authentication
+            const data = await GovApi.login(email, password);
+            if (data.success && data.token) {
+                GovApi.setToken(data.token, data.user);
+                GovUtils.showToast(`Logged in as ${data.user.name} (${data.user.role})!`, 'success');
+                if (promptContainer) {
+                    promptContainer.innerHTML = `<div class="alert alert-success d-flex align-items-center mb-3">
+                        <i class="bi bi-shield-check fs-4 me-3 text-success"></i>
+                        <div>
+                            <strong>Authentication Successful</strong>
+                            <div class="small">Authenticated via PostgreSQL JWT backend. Redirecting...</div>
+                        </div>
+                    </div>`;
+                }
+                setTimeout(() => {
+                    GovAuth.closeAuthModal();
+                    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
+                        const userRole = (data.user && data.user.role) ? data.user.role.toLowerCase() : '';
+                        if (userRole.includes('admin') || userRole.includes('validator')) {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                }, 1000);
+                return;
+            }
+        } catch (apiErr) {
+            console.log('Live login attempt:', apiErr.message);
+            // Show the actual error from the backend (e.g. Invalid credentials, 403, or Network Error)
+            if (promptContainer) {
+                promptContainer.innerHTML = `<div class="alert alert-danger d-flex align-items-center mb-3">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-danger"></i>
+                    <div>
+                        <strong>Login Failed</strong>
+                        <div class="small">${apiErr.message || 'Network Error: Make sure your local backend server is running on port 5009.'}</div>
+                    </div>
+                </div>`;
+            }
+            GovUtils.showToast(apiErr.message || 'Login Failed', 'error');
+            return;
+        }
+
+        // Fallback to local state
+        const res = this.checkAccountStatus(email);
         if (promptContainer && res) {
             promptContainer.innerHTML = res.promptHtml;
             if (res.status === 'active') {
+                if (res.user) {
+                    GovApi.setToken('mock-jwt-token-' + (res.user.id || 'usr'), res.user);
+                }
                 GovUtils.showToast('Login successful! Redirecting to dashboard...', 'success');
                 setTimeout(() => {
                     GovAuth.closeAuthModal();
                     if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-                        window.location.href = 'admin.html';
+                        const userRole = (res.user && res.user.role) ? res.user.role.toLowerCase() : '';
+                        if (userRole.includes('admin') || userRole.includes('validator')) {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        window.location.reload();
                     }
                 }, 1200);
             } else if (res.status === 'approved_awaiting_otp') {
@@ -1263,11 +1553,51 @@ window.GovAuth = {
         }
     },
 
-    handleStartupRegSubmit() {
+    async handleStartupRegSubmit() {
+        // RBAC Guard: Block logged-in government officials from registering startups
+        const loggedInUser = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser());
+        if (loggedInUser && loggedInUser.role) {
+            const normRole = loggedInUser.role.toLowerCase().replace(/[\s-]/g, '_');
+            if (normRole !== 'startup') {
+                GovUtils.showToast(`Access Denied: You are signed in as ${loggedInUser.name} (${loggedInUser.role}). Government officials cannot register startup accounts.`, 'error');
+                const promptContainer = document.getElementById('auth-status-prompt');
+                if (promptContainer) {
+                    promptContainer.innerHTML = `<div class="alert alert-danger d-flex align-items-center mb-3">
+                        <i class="bi bi-shield-x fs-4 me-3 text-danger"></i>
+                        <div>
+                            <strong>Access Denied: Role Conflict</strong>
+                            <div class="small">You are currently authenticated as <strong>${loggedInUser.name}</strong> (<em>${loggedInUser.role}</em>). Government accounts cannot register startups. Please sign out first.</div>
+                        </div>
+                    </div>`;
+                }
+                return;
+            }
+        }
+
         const name = document.getElementById('reg-su-rep')?.value;
         const company = document.getElementById('reg-su-company')?.value;
         const email = document.getElementById('reg-su-email')?.value;
         const dpiit = document.getElementById('reg-su-dpiit')?.value;
+        const password = document.getElementById('reg-su-pwd')?.value;
+
+        try {
+            const data = await GovApi.register({
+                name: name,
+                email: email,
+                password: password,
+                role: 'startup',
+                company_name: company
+            });
+            if (data.success && data.token) {
+                GovApi.setToken(data.token, data.user);
+            }
+        } catch (e) {
+            console.log('Live startup reg fallback to local:', e.message);
+            if (e.status === 403) {
+                GovUtils.showToast(e.message || 'Registration rejected by security policy', 'error');
+                return;
+            }
+        }
 
         GovData.users.unshift({
             id: 'USR-' + (GovData.users.length + 1).toString().padStart(3, '0'),
@@ -1296,9 +1626,17 @@ window.GovAuth = {
         }, 1200);
     },
 
-    handleGovRegSubmit() {
+    async handleGovRegSubmit() {
+        // RBAC Guard: Block already logged-in users from duplicate registration
+        const loggedInUser = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser());
+        if (loggedInUser) {
+            GovUtils.showToast(`You are already signed in as ${loggedInUser.name} (${loggedInUser.role}). Please sign out first.`, 'warning');
+            return;
+        }
+
         const name = document.getElementById('reg-gov-name')?.value;
         const email = document.getElementById('reg-gov-email')?.value;
+        const password = document.getElementById('reg-gov-pwd')?.value;
         const roleKey = document.getElementById('reg-gov-role')?.value;
         const desig = document.getElementById('reg-gov-desig')?.value;
         const dept = document.getElementById('reg-gov-dept')?.value;
@@ -1308,6 +1646,37 @@ window.GovAuth = {
             'evaluator': 'Evaluator',
             'validator': 'Validator'
         };
+
+        let regSuccess = false;
+        try {
+            const data = await GovApi.register({
+                name: name,
+                email: email,
+                password: password,
+                role: roleKey,
+                department_name: dept,
+                designation: desig
+            });
+            if (data && data.success) {
+                regSuccess = true;
+            }
+        } catch (e) {
+            console.log('Live gov reg API response:', e.message);
+            if (e.status === 409) {
+                GovUtils.showToast(`Email ${email} is already registered! Please sign in.`, 'warning');
+                const promptContainer = document.getElementById('auth-status-prompt');
+                if (promptContainer) {
+                    promptContainer.innerHTML = `<div class="alert alert-warning d-flex align-items-center mb-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+                        <div>
+                            <strong>Email Already Registered</strong>
+                            <div class="small">An account with <strong>${email}</strong> is already registered. Switch to the <strong>Sign In</strong> tab to log in, or click <strong>Check Verification Status</strong>.</div>
+                        </div>
+                    </div>`;
+                }
+                return;
+            }
+        }
 
         const newReq = {
             id: 'REG-' + (GovData.pendingRegistrations.length + 1).toString().padStart(3, '0'),
@@ -1340,7 +1709,7 @@ window.GovAuth = {
                 <i class="bi bi-clock-history fs-4 me-3 text-warning"></i>
                 <div>
                     <strong>Request Submitted Successfully</strong>
-                    <div class="small">Your registration is currently awaiting verification by the Super Administrator. You will receive an email once approved.</div>
+                    <div class="small">Your registration for <strong>${name}</strong> is now in the MSInS Super Admin approval queue.</div>
                 </div>
             </div>`;
         }
@@ -1348,9 +1717,22 @@ window.GovAuth = {
         GovUtils.showToast('Verification request submitted to MSInS Super Admin queue.', 'info');
     },
 
-    handleOtpSubmit() {
+    async handleOtpSubmit() {
         const email = document.getElementById('otp-email')?.value.trim().toLowerCase();
         const code = document.getElementById('otp-code')?.value.trim();
+
+        try {
+            const data = await GovApi.verifyOtp(email, code);
+            if (data.success) {
+                GovUtils.showToast('Account activated successfully! Please log in.', 'success');
+                setTimeout(() => {
+                    GovAuth.switchTab('login');
+                }, 1200);
+                return;
+            }
+        } catch (e) {
+            console.log('Live OTP verification fallback to local:', e.message);
+        }
 
         const reg = GovData.pendingRegistrations.find(r => r.email.toLowerCase() === email);
         if (reg && reg.status === 'approved_awaiting_otp') {
@@ -1377,10 +1759,9 @@ window.GovAuth = {
                     detail: `Account for ${reg.name} successfully activated via 6-digit OTP.`
                 });
 
-                GovUtils.showToast('Account activated successfully! Logging in...', 'success');
+                GovUtils.showToast('Account activated successfully! Please log in.', 'success');
                 setTimeout(() => {
-                    GovAuth.closeAuthModal();
-                    window.location.href = 'admin.html';
+                    GovAuth.switchTab('login');
                 }, 1200);
                 return;
             }
@@ -1389,3 +1770,7 @@ window.GovAuth = {
         GovUtils.showToast('Invalid or expired OTP code. Please check your email.', 'error');
     }
 };
+
+/* =============================================
+   GovApi: Centralized REST API Client & Dispatcher
+   ============================================= */

@@ -7,6 +7,7 @@ const router  = express.Router();
 const ctrl    = require('../controllers/evaluationController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { requireRole }  = require('../middleware/roleMiddleware');
+const { validators, validateRequest } = require('../utils/validators');
 
 router.use(authenticate);
 
@@ -60,6 +61,7 @@ router.post('/assignments/:assignmentId/conflict',
 // Evaluator: submit all scores in one shot
 router.post('/scores/submit',
   requireRole('evaluator'),
+  validateRequest(validators.evaluationScoreSubmit),
   ctrl.submitScores
 );
 // Evaluator: view their own scores for an application
@@ -76,7 +78,7 @@ router.get('/scores/:applicationId',
 // ── Panel Decision ────────────────────────────────────────────────
 // Finalize panel — compute weighted avg and generate recommendation
 router.post('/panel/:applicationId/finalize',
-  requireRole('dept_admin', 'super_admin'),
+  requireRole('dept_admin', 'super_admin', 'evaluator'),
   ctrl.finalizePanel
 );
 // View panel decision

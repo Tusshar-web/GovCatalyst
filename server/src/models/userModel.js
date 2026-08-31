@@ -2,12 +2,14 @@ const pool = require('../config/db');
 
 const User = {
   async create({ name, email, password_hash, role, department_name, designation }) {
+    // Startups get instant access; gov officials require super admin approval
+    const accountStatus = (role === 'startup') ? 'active' : 'pending';
     const query = `
-      INSERT INTO users (name, email, password_hash, role, department_name, designation)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, name, email, role, department_name, designation, created_at
+      INSERT INTO users (name, email, password_hash, role, department_name, designation, account_status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, name, email, role, department_name, designation, account_status, created_at
     `;
-    const values = [name, email, password_hash, role, department_name || null, designation || null];
+    const values = [name, email, password_hash, role, department_name || null, designation || null, accountStatus];
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
@@ -27,12 +29,15 @@ const User = {
   },
 
   async findPendingUsers() {
-  const { rows } = await pool.query(
-    `SELECT id, name, email, role, department_name, designation, created_at 
-     FROM users WHERE account_status = 'pending' ORDER BY created_at ASC`
-  );
-  return rows;
-},
+    const { rows } = await pool.query(
+      `SELECT u.id, u.name, u.email, u.role, u.department_name, u.designation, u.created_at, u.account_status,
+              (SELECT otp_code FROM otp_verifications o WHERE o.user_id = u.id AND o.is_used = false ORDER BY o.created_at DESC LIMIT 1) as otp_code
+       FROM users u
+       WHERE u.account_status IN ('pending', 'approved') 
+       ORDER BY u.created_at ASC`
+    );
+    return rows;
+  },
 
 async updateStatus(userId, status, approvedBy = null) {
   const { rows } = await pool.query(
@@ -42,6 +47,15 @@ async updateStatus(userId, status, approvedBy = null) {
   );
   return rows[0];
 },
+
+  async findAllByRole(role) {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, role, department_name, designation, created_at 
+       FROM users WHERE role = $1 AND account_status = 'active'`,
+      [role]
+    );
+    return rows;
+  },
 };
 
 

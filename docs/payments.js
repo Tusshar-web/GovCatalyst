@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
     }
 
+    const currentUser = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser()) || null;
+    const normRole = currentUser && currentUser.role ? currentUser.role.toLowerCase().replace(/[\s-]/g, '_') : '';
+    const canManagePayments = normRole === 'dept_admin' || normRole === 'super_admin';
+
     // Render Stats and Table
     function renderPayments() {
         const filterP = selPilot.value;
@@ -49,9 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let actionBtn = '';
             if (pay.status === 'In Escrow') {
-                actionBtn = `<button class="btn btn-sm btn-success btn-release-escrow" data-id="${pay.id}"><i class="bi bi-unlock-fill me-1"></i> Release Funds</button>`;
+                actionBtn = canManagePayments
+                    ? `<button class="btn btn-sm btn-success btn-release-escrow" data-id="${pay.id}"><i class="bi bi-unlock-fill me-1"></i> Release Funds</button>`
+                    : `<span class="badge bg-warning text-dark"><i class="bi bi-lock-fill me-1"></i> In Escrow</span>`;
             } else if (pay.status === 'Pending') {
-                actionBtn = `<button class="btn btn-sm btn-outline-warning btn-request-escrow" data-id="${pay.id}"><i class="bi bi-lock me-1"></i> Lock in Escrow</button>`;
+                actionBtn = canManagePayments
+                    ? `<button class="btn btn-sm btn-outline-warning btn-request-escrow" data-id="${pay.id}"><i class="bi bi-lock me-1"></i> Lock in Escrow</button>`
+                    : `<span class="badge bg-secondary">Pending Escrow</span>`;
             } else {
                 actionBtn = `<span class="text-success small fw-bold"><i class="bi bi-check2-all me-1"></i> Disbursed</span>`;
             }

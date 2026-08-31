@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS gov_pilot_evidences (
 CREATE TABLE IF NOT EXISTS gov_pilot_audit_logs (
   id         SERIAL       PRIMARY KEY,
   pilot_id   UUID,
-  user_id    INTEGER,
+  user_id    UUID,
   action     VARCHAR(255) NOT NULL,
   detail     TEXT,
   old_value  TEXT         NOT NULL DEFAULT 'N/A',
@@ -159,3 +159,22 @@ CREATE INDEX IF NOT EXISTS idx_gov_pilot_fb_pid    ON gov_pilot_feedbacks(pilot_
 CREATE INDEX IF NOT EXISTS idx_gov_pilot_ev_pid    ON gov_pilot_evidences(pilot_id);
 CREATE INDEX IF NOT EXISTS idx_gov_pilots_code     ON gov_pilots(pilot_code);
 CREATE INDEX IF NOT EXISTS idx_gov_pilots_status   ON gov_pilots(status);
+
+-- ── gov_pilot_milestones ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS gov_pilot_milestones (
+  id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  pilot_id        UUID         NOT NULL REFERENCES gov_pilots(id) ON DELETE CASCADE,
+  milestone_code  VARCHAR(32)  NOT NULL,
+  phase           INTEGER      NOT NULL DEFAULT 1,
+  name            VARCHAR(255) NOT NULL,
+  description     TEXT         NOT NULL,
+  due_date        DATE         NOT NULL,
+  completed_date  DATE,
+  payment_amount  NUMERIC(14,2) NOT NULL DEFAULT 0,
+  payment_linked  BOOLEAN      NOT NULL DEFAULT true,
+  status          VARCHAR(32)  NOT NULL DEFAULT 'Pending'
+                    CHECK (status IN ('Pending','In Progress','Under Review','Verified','Completed','Overdue','Rejected')),
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_gov_pilot_ms_pid ON gov_pilot_milestones(pilot_id);

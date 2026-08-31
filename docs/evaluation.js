@@ -2,7 +2,7 @@
    GovCatalyst — Module 4: Expert Evaluation Logic
    ============================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const evaluatorsList = document.getElementById('evaluators-list');
     const rubricTbody = document.getElementById('rubric-tbody');
     const rankingTbody = document.getElementById('ranking-tbody');
@@ -33,8 +33,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const valCost = document.getElementById('val-cost');
     const liveTotalScore = document.getElementById('live-total-score');
 
+    const currentUser = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser()) || null;
+    const normRole = currentUser && currentUser.role ? currentUser.role.toLowerCase().replace(/[\s-]/g, '_') : '';
+
+    // Only evaluator and super_admin can submit scoring
+    if (currentUser && normRole !== 'evaluator' && normRole !== 'super_admin') {
+        if (btnToggleScoring) btnToggleScoring.style.display = 'none';
+    }
+
     // Toggle scoring form
     function toggleScoring(show) {
+        if (currentUser && normRole !== 'evaluator' && normRole !== 'super_admin') {
+            GovUtils.showToast('Access Denied: Only certified Evaluators can submit scores.', 'error');
+            return;
+        }
         cardScoringForm.style.display = show ? 'block' : 'none';
         if (show) cardScoringForm.scrollIntoView({ behavior: 'smooth' });
     }
@@ -60,33 +72,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Render Rubric Table
-    function renderRubric() {
-        rubricTbody.innerHTML = GovData.evaluationRubric.map(r => `
+    async function renderRubric() {
+        let rubricData = GovData.evaluationRubric;
+        let cId = (filterRankingChallenge && filterRankingChallenge.value) || (scoreChallenge && scoreChallenge.value);
+
+        try {
+            if (window.GovApi && cId) {
+                const res = await GovApi.getEvaluationCriteria(cId);
+                if (res.success && res.criteria) {
+                    rubricData = res.criteria;
+                }
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
+
+        rubricTbody.innerHTML = rubricData.map(r => `
             <tr>
-                <td class="fw-bold text-navy">${r.category}</td>
+                <td class="fw-bold text-navy">${r.category || r.name || 'Criterion'}</td>
                 <td class="text-center"><span class="badge bg-primary">${r.weight}%</span></td>
-                <td class="text-center fw-semibold">${r.maxScore} pts</td>
+                <td class="text-center fw-semibold">${r.maxScore !== undefined ? r.maxScore : 10} pts</td>
                 <td><small class="text-muted">${r.description}</small></td>
             </tr>
         `).join('');
     }
 
     // Populate Selects in Form
-    function populateFormSelects() {
-        scoreChallenge.innerHTML = GovData.challenges.map(c => `
-            <option value="${c.id}">[${c.id}] ${c.title}</option>
+    async function populateFormSelects() {
+        let challenges = GovData.challenges;
+        let startups = GovData.startups;
+        let evaluators = GovData.evaluators;
+
+        try {
+            if (window.GovApi) {
+                const resC = await GovApi.getChallenges();
+                if (resC.success && resC.challenges) challenges = resC.challenges;
+
+                const resS = await GovApi.getStartups();
+                if (resS.success && resS.startups) startups = resS.startups;
+
+                const resE = await GovApi.getEvaluators();
+                if (resE.success && resE.users) evaluators = resE.users;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
+
+        // Also update local GovData just so functions like checkCoi can find them
+        GovData.evaluators = evaluators;
+        GovData.startups = startups;
+
+        scoreChallenge.innerHTML = challenges.map(c => `
+            <option value="${c.id}">[${c.id.substring(0,8) || c.id}] ${c.title}</option>
         `).join('');
 
-        scoreStartup.innerHTML = GovData.startups.map(s => `
-            <option value="${s.id}">[${s.id}] ${s.name}</option>
+        scoreStartup.innerHTML = startups.map(s => `
+            <option value="${s.id}">[${s.id.substring(0,8) || s.id}] ${s.company_name || s.name}</option>
         `).join('');
 
-        scoreEvaluator.innerHTML = GovData.evaluators.map(e => `
-            <option value="${e.id}">${e.name} (${e.department})</option>
+        scoreEvaluator.innerHTML = evaluators.map(e => `
+            <option value="${e.id}">${e.name} (${e.department_name || e.department || 'Evaluator'})</option>
         `).join('');
 
         filterRankingChallenge.innerHTML = '<option value="">All Challenges</option>' + 
-            GovData.challenges.map(c => `<option value="${c.id}">${c.id} - ${c.title}</option>`).join('');
+            challenges.map(c => `<option value="${c.id}">${c.id.substring(0,8) || c.id} - ${c.title}</option>`).join('');
     }
 
     // Check Conflict of Interest on change
@@ -105,6 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     scoreEvaluator?.addEventListener('change', checkCoi);
     scoreStartup?.addEventListener('change', checkCoi);
+    scoreChallenge?.addEventListener('change', () => {
+        checkCoi();
+        renderRubric();
+    });
 
     // Compute live weighted score
     function updateLiveScore() {
@@ -127,24 +180,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Form Submission
-    formScorecard?.addEventListener('submit', (e) => {
+    formScorecard?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const suId = scoreStartup.value;
         const chId = scoreChallenge.value;
         const evId = scoreEvaluator.value;
 
+        const assignmentId = `assign_${evId}_${suId}`; // Mock ID as fallback
+
         const newScore = {
             startupId: suId,
             challengeId: chId,
             evaluatorId: evId,
-            scores: {
-                innovation: parseInt(rngInno.value, 10),
-                feasibility: parseInt(rngFeas.value, 10),
-                scalability: parseInt(rngScal.value, 10),
-                cost: parseInt(rngCost.value, 10)
-            },
+            assignmentId: assignmentId,
+            scores: [
+                { criterionId: 'innovation', score: parseInt(rngInno.value, 10) },
+                { criterionId: 'feasibility', score: parseInt(rngFeas.value, 10) },
+                { criterionId: 'scalability', score: parseInt(rngScal.value, 10) },
+                { criterionId: 'cost', score: parseInt(rngCost.value, 10) }
+            ],
             comments: document.getElementById('inp-score-comments').value.trim() || 'Evaluated per standard GFR rubric.'
         };
+
+        try {
+            if (window.GovApi) {
+                const scoresForApi = newScore.scores.map(s => ({
+                    ...s,
+                    comments: newScore.comments,
+                    justification: ''
+                }));
+                const submitRes = await GovApi.submitEvaluationScores({ 
+                    assignmentId, 
+                    scores: scoresForApi,
+                    challengeId: chId,
+                    startupId: suId,
+                    evaluatorId: evId
+                });
+
+                // Automatically finalize panel so the "APPROVE" decision gets created (for prototype ease of use)
+                if (submitRes && submitRes.scores && submitRes.scores[0]) {
+                    const appId = submitRes.scores[0].application_id;
+                    await GovApi.finalizePanelDecision(appId, newScore.comments);
+                }
+            }
+        } catch (err) {
+            console.error('Backend submit failed:', err.message);
+            GovUtils.showToast('Failed to submit scores. Please try again.', 'error');
+            return; // Abort local update if backend fails
+        }
 
         // Remove previous if exists from same evaluator for same pair
         GovData.evaluationScores = GovData.evaluationScores.filter(
@@ -159,14 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
             role: 'Evaluator',
             action: 'Score Submission',
             module: 'Evaluation',
-            detail: `Submitted scorecard for ${suId} on ${chId} with weighted score ${GovUtils.calcWeightedScore(newScore.scores)}`
+            detail: `Submitted scorecard for ${suId} on ${chId} with weighted score ${GovUtils.calcWeightedScore({
+                innovation: parseInt(rngInno.value, 10),
+                feasibility: parseInt(rngFeas.value, 10),
+                scalability: parseInt(rngScal.value, 10),
+                cost: parseInt(rngCost.value, 10)
+            })}`
         });
 
         formScorecard.reset();
         updateLiveScore();
         toggleScoring(false);
         renderRankingTable();
-        GovUtils.showToast('Expert scorecard successfully recorded and leaderboard updated!', 'success');
+        GovUtils.showToast('Expert scorecard recorded and panel decision finalized!', 'success');
     });
 
     // Render Ranking Table
@@ -191,10 +279,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     latestComment: es.comments
                 };
             }
-            grouped[key].innoTotal += es.scores.innovation;
-            grouped[key].feasTotal += es.scores.feasibility;
-            grouped[key].scalTotal += es.scores.scalability;
-            grouped[key].costTotal += es.scores.cost;
+            const getScore = (critId) => {
+                if (Array.isArray(es.scores)) {
+                    const s = es.scores.find(x => x.criterionId === critId);
+                    return s ? s.score : 0;
+                }
+                return es.scores[critId] || 0;
+            };
+
+            grouped[key].innoTotal += getScore('innovation');
+            grouped[key].feasTotal += getScore('feasibility');
+            grouped[key].scalTotal += getScore('scalability');
+            grouped[key].costTotal += getScore('cost');
             grouped[key].count += 1;
             const ev = GovData.evaluators.find(e => e.id === es.evaluatorId);
             if (ev) grouped[key].evaluators.push(ev.name);
@@ -225,14 +321,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         rankingTbody.innerHTML = list.map((item, idx) => {
-            const rank = idx + 1;
-            const rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : (rank === 3 ? 'rank-3' : 'rank-other'));
             const su = GovData.startups.find(s => s.id === item.startupId) || { name: item.startupId, sector: '' };
             const ch = GovData.challenges.find(c => c.id === item.challengeId) || { title: item.challengeId };
 
+            const verdict = item.weightedScore >= 75 ? 'APPROVE' : 'REJECT';
+            const verdictClass = item.weightedScore >= 75 ? 'bg-success' : 'bg-danger';
+
             return `
                 <tr>
-                    <td class="text-center"><span class="rank-badge ${rankClass}">${rank}</span></td>
                     <td>
                         <span class="fw-bold text-navy">${su.name}</span>
                         <small class="text-muted d-block">${su.sector}</small>
@@ -241,32 +337,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="small fw-semibold text-dark">${ch.title}</span>
                         <small class="text-muted font-monospace d-block">${item.challengeId}</small>
                     </td>
-                    <td class="text-center fw-medium">${item.avgInno}/10</td>
-                    <td class="text-center fw-medium">${item.avgFeas}/10</td>
-                    <td class="text-center fw-medium">${item.avgScal}/10</td>
-                    <td class="text-center fw-medium">${item.avgCost}/10</td>
+                    <td><small class="text-muted">${item.evaluators.join(', ')}</small></td>
                     <td class="text-center">
-                        <span class="badge ${item.weightedScore >= 80 ? 'bg-success' : 'bg-primary'} p-2 font-monospace" style="font-size: 13px;">
+                        <span class="badge ${verdictClass} p-2 font-monospace" style="font-size: 13px;">
                             ${item.weightedScore} / 100
                         </span>
                     </td>
-                    <td><small class="text-muted">${item.evaluators.join(', ')}</small></td>
-                    <td class="text-end">
+                    <td class="text-center">
+                        <span class="badge bg-light text-success"><i class="bi bi-shield-check"></i> Clear</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge ${verdictClass} fs-6">${verdict}</span>
+                    </td>
+                    <td class="text-center">
+                        ${verdict === 'APPROVE' ? `
                         <a href="pilot-design.html?startupId=${item.startupId}&challengeId=${item.challengeId}" class="btn btn-sm btn-gov">
                             <i class="bi bi-flask me-1"></i> Structure Pilot
-                        </a>
+                        </a>` : `<button class="btn btn-sm btn-secondary" disabled>Rejected</button>`}
                     </td>
                 </tr>
             `;
+
         }).join('');
     }
 
-    filterRankingChallenge?.addEventListener('change', renderRankingTable);
+    filterRankingChallenge?.addEventListener('change', () => {
+        renderRankingTable();
+        renderRubric();
+    });
 
     // Initial render
     renderEvaluators();
-    renderRubric();
-    populateFormSelects();
+    await populateFormSelects();
+    await renderRubric();
     updateLiveScore();
     renderRankingTable();
 });

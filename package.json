@@ -1,0 +1,24 @@
+{
+  "name": "govcatalyst",
+  "version": "1.0.0",
+  "description": "GovCatalyst — Maharashtra Public Procurement & Startup Innovation Bridge",
+  "main": "server/src/app.js",
+  "scripts": {
+    "start": "node server/src/app.js",
+    "dev": "cd server && npm run dev",
+    "install:server": "cd server && npm install",
+    "postinstall": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "govcatalyst",
+    "gfr-194",
+    "procurement",
+    "innovation",
+    "smart-governance"
+  ],
+  "author": "GovCatalyst Team",
+  "license": "MIT"
+}

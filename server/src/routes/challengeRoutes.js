@@ -7,15 +7,20 @@ const {
   getMyChallenges,
   updateChallenge,
   publishChallenge,
+  draftWithAI,
+  deleteChallenge
 } = require('../controllers/challengeController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { requireRole } = require('../middleware/roleMiddleware');
+const { validators, validateRequest } = require('../utils/validators');
 
-router.post('/', authenticate, requireRole('dept_admin'), createChallenge);
+router.post('/', authenticate, requireRole('dept_admin', 'super_admin'), validateRequest(validators.challengeCreate), createChallenge);
+router.post('/ai-draft', authenticate, requireRole('dept_admin', 'super_admin'), draftWithAI);
 router.get('/', authenticate, listChallenges);                 // all logged-in roles can browse
-router.get('/my', authenticate, requireRole('dept_admin'), getMyChallenges);
+router.get('/my', authenticate, requireRole('dept_admin', 'super_admin'), getMyChallenges);
 router.get('/:id', authenticate, getChallenge);
-router.patch('/:id', authenticate, requireRole('dept_admin'), updateChallenge);
-router.patch('/:id/publish', authenticate, requireRole('dept_admin'), publishChallenge);
+router.patch('/:id', authenticate, requireRole('dept_admin', 'super_admin'), validateRequest(validators.challengeUpdate), updateChallenge);
+router.patch('/:id/publish', authenticate, requireRole('dept_admin', 'super_admin'), publishChallenge);
+router.delete('/:id', authenticate, requireRole('dept_admin', 'super_admin'), deleteChallenge);
 
 module.exports = router;

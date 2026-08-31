@@ -127,3 +127,18 @@ exports.getChallengeApplications = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+// 4. Get only Approved Applications (Panel Decision)
+exports.getApprovedApplications = async (req, res) => {
+  try {
+    const { challenge_id } = req.params;
+    const applications = await Application.findApprovedByChallengeId(challenge_id);
+    res.json({
+      success: true,
+      count: applications.length,
+      applications
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

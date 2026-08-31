@@ -61,6 +61,44 @@ const Pilot = {
     return rows;
   },
 
+  /** Fetch pilots belonging to a specific startup by any matching identifier (names, aliases, IDs) */
+  async findByStartupIdentifiers(identifiers = []) {
+    if (!identifiers || identifiers.length === 0) return [];
+    
+    const terms = new Set(identifiers.filter(Boolean));
+    identifiers.forEach(id => {
+      if (typeof id === 'string') {
+        if (id.toLowerCase().includes('krisan')) terms.add('kisan');
+        if (id.toLowerCase().includes('kisan')) terms.add('krisan');
+      }
+    });
+
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    terms.forEach(term => {
+      conditions.push(`startup ILIKE $${idx} OR startup = $${idx + 1}`);
+      values.push(`%${term}%`, term);
+      idx += 2;
+    });
+
+    if (conditions.length === 0) return [];
+
+    const { rows } = await pool.query(
+      `SELECT * FROM gov_pilots 
+       WHERE ${conditions.join(' OR ')}
+       ORDER BY created_at DESC`,
+      values
+    );
+    return rows;
+  },
+
+  /** Fetch pilots belonging to a specific startup (backwards-compatible wrapper) */
+  async findByStartupNames(name1, name2, id) {
+    return this.findByStartupIdentifiers([name1, name2, id]);
+  },
+
   /** Fetch one pilot by UUID */
   async findById(id) {
     const { rows } = await pool.query(
@@ -494,6 +532,47 @@ const PilotAlert = {
   }
 };
 
+// ─────────────────────────────────────────
+// MILESTONES
+// ─────────────────────────────────────────
+const PilotMilestone = {
+  async create({ pilotId, milestoneCode, phase, name, description, dueDate, paymentAmount, paymentLinked }) {
+    const { rows } = await pool.query(
+      `INSERT INTO gov_pilot_milestones (
+        pilot_id, milestone_code, phase, name, description, due_date, payment_amount, payment_linked, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending')
+      RETURNING *`,
+      [pilotId, milestoneCode, phase || 1, name, description, dueDate, paymentAmount || 0, paymentLinked !== false]
+    );
+    return rows[0];
+  },
+
+  async findByPilot(pilotId) {
+    const { rows } = await pool.query(
+      'SELECT * FROM gov_pilot_milestones WHERE pilot_id = $1 ORDER BY due_date ASC',
+      [pilotId]
+    );
+    return rows;
+  },
+
+  async updateStatus(id, status, completedDate = null) {
+    const { rows } = await pool.query(
+      `UPDATE gov_pilot_milestones 
+       SET status = $1, completed_date = COALESCE($2, completed_date), updated_at = now()
+       WHERE id = $3 RETURNING *`,
+      [status, completedDate, id]
+    );
+    return rows[0];
+  },
+
+  async deleteByPilot(pilotId) {
+    await pool.query(
+      'DELETE FROM gov_pilot_milestones WHERE pilot_id = $1',
+      [pilotId]
+    );
+  }
+};
+
 module.exports = {
   Pilot,
   PilotKpi,
@@ -503,5 +582,6 @@ module.exports = {
   PilotEvidence,
   PilotAuditLog,
   PilotTelemetry,
-  PilotAlert
+  PilotAlert,
+  PilotMilestone
 };

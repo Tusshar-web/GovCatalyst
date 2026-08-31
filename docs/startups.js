@@ -19,8 +19,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCancelReg = document.getElementById('btn-cancel-reg');
     const formStartup = document.getElementById('form-startup');
 
+    // Role-based Access Control (RBAC): Only guests or logged-in Startups can register startups
+    const currentUser = (window.GovApi && GovApi.getCurrentUser()) || (window.GovPageAuth && GovPageAuth.getUser()) || null;
+    if (currentUser && currentUser.role && btnToggleReg) {
+        const normRole = currentUser.role.toLowerCase().replace(/[\s-]/g, '_');
+        if (normRole !== 'startup') {
+            btnToggleReg.style.display = 'none'; // Hide registration button from dept_admin, super_admin, evaluator, validator
+        }
+    }
+
     // Toggle Registration Form
     function toggleReg(show) {
+        if (currentUser && currentUser.role) {
+            const normRole = currentUser.role.toLowerCase().replace(/[\s-]/g, '_');
+            if (normRole !== 'startup') {
+                GovUtils.showToast(`Access Denied: You are signed in as ${currentUser.name} (${currentUser.role}). Government accounts cannot register startups.`, 'error');
+                return;
+            }
+        }
         cardRegForm.style.display = show ? 'block' : 'none';
         if (show) cardRegForm.scrollIntoView({ behavior: 'smooth' });
     }
@@ -30,62 +46,83 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancelReg?.addEventListener('click', () => toggleReg(false));
 
     // Populate Match dropdown with open challenges
-    function populateMatchChallenges() {
+    async function populateMatchChallenges() {
+        let challenges = GovData.challenges; // fallback default
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) challenges = res.challenges;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable, using local data:', e.message);
+        }
+        
         selMatchChallenge.innerHTML = '<option value="">-- Choose Challenge Statement --</option>' +
-            GovData.challenges.map(c => `
+            challenges.map(c => `
                 <option value="${c.id}">[${c.id}] ${c.title} (${c.category} - ${c.status})</option>
             `).join('');
+
+        if (currentUser && currentUser.role === 'startup') {
+            if (btnRunMatch) btnRunMatch.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Check My Match Score';
+        }
     }
 
     // Run Intelligent Matching Engine
-    btnRunMatch?.addEventListener('click', () => {
+    btnRunMatch?.addEventListener('click', async () => {
         const cId = selMatchChallenge.value;
         if (!cId) {
             GovUtils.showToast('Please select a challenge statement to run matching.', 'warning');
             return;
         }
 
-        const challenge = GovData.challenges.find(c => c.id === cId);
+        let challengesList = GovData.challenges;
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.getChallenges();
+                if (res.success && res.challenges) challengesList = res.challenges;
+            }
+        } catch (e) {
+            console.warn('Backend unavailable:', e.message);
+        }
+
+        const challenge = challengesList.find(c => c.id == cId);
         if (!challenge) return;
 
-        btnRunMatch.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Matching Capabilities & AI Scoring...';
+        const isStartup = currentUser && currentUser.role === 'startup';
+        btnRunMatch.innerHTML = isStartup 
+            ? '<span class="spinner-border spinner-border-sm me-1"></span> Evaluating My Profile...'
+            : '<span class="spinner-border spinner-border-sm me-1"></span> Matching Capabilities & AI Scoring...';
         btnRunMatch.disabled = true;
 
-        setTimeout(() => {
-            btnRunMatch.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Run Intelligent Match Engine';
-            btnRunMatch.disabled = false;
+        try {
+            let scoredStartups = [];
 
-            // Compute match scores based on sector similarity, category overlap, and tech tags
-            const challengeWords = (challenge.title + ' ' + challenge.description + ' ' + challenge.category)
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, ' ')
-                .split(' ')
-                .filter(w => w.length > 2);
+            if (window.GovApi) {
+                try {
+                    const res = await GovApi.getAiStartupMatches(challenge.id);
+                    if (res.success && res.matches) {
+                        scoredStartups = res.matches.map(match => {
+                            const su = GovData.startups.find(s => s.id === match.startup_id) || GovData.startups[0];
+                            return {
+                                startup: su,
+                                matchScore: match.score,
+                                feedback: match.feedback
+                            };
+                        }).filter(item => item.startup);
+                    }
+                } catch (e) {
+                    console.error('Failed to get AI matches:', e.message);
+                }
+            }
 
-            const scoredStartups = GovData.startups.map(su => {
-                let score = 30; // base score
-                
-                // Sector match
-                if (su.sector.toLowerCase() === challenge.category.toLowerCase()) score += 35;
-                else if ((su.sector === 'AI/ML' && challenge.category === 'Software') || (su.sector === 'IoT' && challenge.category === 'Hardware')) score += 20;
-
-                // Tag overlap
-                const tagOverlap = su.matchTags.filter(t => challengeWords.some(cw => cw.includes(t) || t.includes(cw))).length;
-                score += tagOverlap * 12;
-
-                // Past pilots boost
-                score += Math.min(su.pastPilots * 4, 15);
-
-                // DPIIT verified bonus
-                if (su.dpiitNumber) score += 5;
-
-                // GeM boost
-                if (su.gemRegistered) score += 5;
-
-                score = Math.min(Math.max(score, 25), 98); // Clamp between 25% and 98%
-
-                return { startup: su, matchScore: score };
-            });
+            // Fallback if API fails or is unavailable
+            if (scoredStartups.length === 0) {
+                scoredStartups = GovData.startups.map(su => ({
+                    startup: su,
+                    matchScore: Math.floor(Math.random() * 40) + 40,
+                    feedback: 'AI matching unavailable; using fallback score.'
+                }));
+            }
 
             scoredStartups.sort((a, b) => b.matchScore - a.matchScore);
 
@@ -111,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                                 <p class="small text-secondary mb-2 text-truncate-2">${su.description}</p>
+                                ${item.feedback ? `<div class="alert alert-info py-1 px-2 mb-2" style="font-size: 0.75rem;"><strong>AI Feedback:</strong> ${item.feedback}</div>` : ''}
                                 <div class="mb-3">
                                     ${su.techStack.slice(0, 3).map(t => `<span class="tech-tag">${t}</span>`).join('')}
                                 </div>
@@ -134,48 +172,87 @@ document.addEventListener('DOMContentLoaded', () => {
             matchCardsGrid.querySelectorAll('.btn-su-detail').forEach(btn => {
                 btn?.addEventListener('click', () => viewStartupProfile(btn.dataset.id));
             });
-        }, 500);
+            
+        } catch (err) {
+            console.error('Match engine error:', err);
+            GovUtils.showToast('Error running match engine.', 'error');
+        } finally {
+            const isStartup = currentUser && currentUser.role === 'startup';
+            btnRunMatch.innerHTML = isStartup 
+                ? '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Check My Match Score'
+                : '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Run Intelligent Match Engine';
+            btnRunMatch.disabled = false;
+        }
     });
 
     // Form Registration Submission
-    formStartup?.addEventListener('submit', (e) => {
+    // Form Registration Submission
+    formStartup?.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // RBAC check
+        if (!currentUser || currentUser.role !== 'startup') {
+            GovUtils.showToast(`Access Denied: You must be logged in as a Startup to register a profile.`, 'error');
+            return;
+        }
+
         const tags = document.getElementById('inp-su-tags').value.split(',').map(t => t.trim()).filter(Boolean);
-        const newStartup = {
-            id: `SU-00${GovData.startups.length + 1}`,
-            name: document.getElementById('inp-su-name').value.trim(),
+        const profilePayload = {
+            company_name: document.getElementById('inp-su-name').value.trim(),
             sector: document.getElementById('inp-su-sector').value,
             stage: document.getElementById('inp-su-stage').value,
-            techStack: tags.length ? tags : ['Software', 'Cloud'],
-            pastPilots: parseInt(document.getElementById('inp-su-pilots').value || '0', 10),
-            dpiitNumber: document.getElementById('inp-su-dpiit').value.trim() || 'DIPP-PENDING',
-            gemRegistered: document.getElementById('inp-su-gem').value === 'true',
+            tech_tags: tags.length ? tags : ['Software', 'Cloud'],
+            past_pilots: parseInt(document.getElementById('inp-su-pilots').value || '0', 10),
+            dpiit_reg_number: document.getElementById('inp-su-dpiit').value.trim() || 'DIPP-PENDING',
+            gem_registered: document.getElementById('inp-su-gem').value === 'true',
             founders: document.getElementById('inp-su-founders').value.trim() || 'Founder Team',
             city: document.getElementById('inp-su-city').value.trim(),
-            description: document.getElementById('inp-su-desc').value.trim(),
-            matchTags: tags.map(t => t.toLowerCase()),
-            turnover: parseInt(document.getElementById('inp-su-turnover').value || '0', 10),
-            teamSize: 10,
-            founded: new Date().getFullYear().toString()
+            pitch_summary: document.getElementById('inp-su-desc').value.trim(),
+            past_turnover: parseInt(document.getElementById('inp-su-turnover').value || '0', 10),
+            team_size: 10,
+            founded_year: new Date().getFullYear().toString()
         };
 
-        GovData.startups.unshift(newStartup);
-
-        GovData.auditTrail.unshift({
-            id: GovData.auditTrail.length + 1,
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            user: newStartup.founders,
-            role: 'Startup',
-            action: 'Registration',
-            module: 'Startups',
-            detail: `Registered new startup profile ${newStartup.id}: ${newStartup.name} (${newStartup.sector})`
-        });
-
-        formStartup.reset();
-        toggleReg(false);
-        renderDirectory();
-        populateMatchChallenges();
-        GovUtils.showToast(`Startup ${newStartup.name} successfully registered!`, 'success');
+        try {
+            if (window.GovApi) {
+                const res = await GovApi.updateStartupProfile(profilePayload);
+                if (res.success) {
+                    GovUtils.showToast(`Startup profile successfully saved to database!`, 'success');
+                    
+                    formStartup.reset();
+                    toggleReg(false);
+                    
+                    // Refresh data from backend
+                    const refreshRes = await GovApi.getStartups();
+                    if (refreshRes.success) {
+                        GovData.startups = refreshRes.startups.map(s => ({
+                            id: s.id,
+                            name: s.company_name,
+                            description: s.pitch_summary || 'No description provided.',
+                            sector: s.sector || 'General',
+                            techStack: s.tech_tags || [],
+                            matchTags: s.tech_tags ? s.tech_tags.map(t => t.toLowerCase()) : [],
+                            pastPilots: s.past_pilots || 0,
+                            turnover: s.past_turnover || 0,
+                            stage: s.stage || 'Early',
+                            dpiitNumber: s.dpiit_reg_number,
+                            gemRegistered: s.gem_registered,
+                            city: s.city || 'Not Specified',
+                            founders: s.founders || 'Not Specified'
+                        }));
+                    }
+                    renderDirectory();
+                    populateMatchChallenges();
+                } else {
+                    GovUtils.showToast(res.message || 'Failed to save profile.', 'error');
+                }
+            } else {
+                GovUtils.showToast('API not connected.', 'error');
+            }
+        } catch (e) {
+            console.error('Profile update error:', e);
+            GovUtils.showToast('An error occurred while saving the profile.', 'error');
+        }
     });
 
     // Render Directory Cards Grid
@@ -324,6 +401,36 @@ document.addEventListener('DOMContentLoaded', () => {
     filterStage?.addEventListener('change', renderDirectory);
 
     // Initial render
-    populateMatchChallenges();
-    renderDirectory();
+    async function initPage() {
+        populateMatchChallenges();
+
+        try {
+            if (window.GovApi) {
+                const refreshRes = await GovApi.getStartups();
+                if (refreshRes.success && refreshRes.startups) {
+                    GovData.startups = refreshRes.startups.map(s => ({
+                        id: s.id,
+                        name: s.company_name || 'Unnamed Startup',
+                        description: s.pitch_summary || 'No description provided.',
+                        sector: s.sector || 'General',
+                        techStack: s.tech_tags || [],
+                        matchTags: s.tech_tags ? s.tech_tags.map(t => t.toLowerCase()) : [],
+                        pastPilots: s.past_pilots || 0,
+                        turnover: s.past_turnover || 0,
+                        stage: s.stage || 'Early',
+                        dpiitNumber: s.dpiit_reg_number,
+                        gemRegistered: s.gem_registered,
+                        city: s.city || 'Not Specified',
+                        founders: s.founders || 'Not Specified'
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load initial startups:', e);
+        }
+
+        renderDirectory();
+    }
+
+    initPage();
 });

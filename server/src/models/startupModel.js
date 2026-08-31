@@ -40,8 +40,20 @@ const Startup = {
   },
 
   async updateProfile(user_id, fields) {
-    // fields = { sector, stage, founded_year, team_size, past_turnover, tech_tags, pitch_summary, website_url }
-    const allowed = ['sector', 'stage', 'founded_year', 'team_size', 'past_turnover', 'tech_tags', 'pitch_summary', 'website_url'];
+    // Ensure new columns exist (simple migration)
+    await pool.query(`
+      ALTER TABLE startups 
+      ADD COLUMN IF NOT EXISTS past_pilots INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS gem_registered BOOLEAN DEFAULT false,
+      ADD COLUMN IF NOT EXISTS city VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS founders VARCHAR(255)
+    `).catch(e => console.warn('Migration warning:', e.message));
+
+    const allowed = [
+      'company_name', 'sector', 'stage', 'founded_year', 'team_size', 'past_turnover', 
+      'tech_tags', 'pitch_summary', 'website_url', 'past_pilots', 'gem_registered', 
+      'city', 'founders', 'dpiit_reg_number'
+    ];
     const setClauses = [];
     const values = [];
     let idx = 1;
@@ -58,12 +70,16 @@ const Startup = {
     values.push(user_id);
     const query = `
       UPDATE startups SET ${setClauses.join(', ')}, updated_at = now()
-      WHERE user_id = $${idx}
-      RETURNING *
+      WHERE user_id = $${idx} RETURNING *
     `;
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
+
+  async findAll() {
+    const { rows } = await pool.query('SELECT * FROM startups ORDER BY created_at DESC');
+    return rows;
+  }
 };
 
 module.exports = Startup;
