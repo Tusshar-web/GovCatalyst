@@ -121,76 +121,18 @@ window.GovUtils = {
         return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     },
 
-    // Enhanced Toast notification system with titles, action buttons, progress bars & sound
-    showToast(options, legacyType = 'info') {
-        let title, message, type, duration, actionText, onAction, sound, pushToCenter;
-
-        if (typeof options === 'string') {
-            message = options;
-            type = legacyType;
-            title = type === 'success' ? 'Success' : (type === 'error' ? 'Error' : (type === 'warning' ? 'Warning' : 'Notification'));
-            duration = 4000;
-        } else if (typeof options === 'object' && options !== null) {
-            message = options.message || '';
-            type = options.type || 'info';
-            title = options.title || (type === 'success' ? 'Success' : (type === 'error' ? 'Error' : (type === 'critical' ? 'Critical Alert' : (type === 'warning' ? 'Warning' : 'Notification'))));
-            duration = options.duration !== undefined ? options.duration : (type === 'critical' ? 7000 : 4500);
-            actionText = options.actionText || null;
-            onAction = options.onAction || null;
-            sound = options.sound || (type === 'critical');
-            pushToCenter = options.pushToCenter !== false;
-        } else {
-            return;
-        }
-
+    // Show toast notification
+    showToast(message, type = 'info') {
         let container = document.querySelector('.toast-container-gov');
         if (!container) {
             container = document.createElement('div');
             container.className = 'toast-container-gov';
-            container.setAttribute('aria-live', 'polite');
-            container.setAttribute('role', 'region');
             document.body.appendChild(container);
         }
-
-        // Limit active toasts to max 5 to prevent overflow
-        const existingToasts = container.querySelectorAll('.gov-toast');
-        if (existingToasts.length >= 5) {
-            existingToasts[0].remove();
-        }
-
-        const icons = {
-            success: '<i class="bi bi-check-circle-fill"></i>',
-            error: '<i class="bi bi-x-circle-fill"></i>',
-            critical: '<i class="bi bi-exclamation-triangle-fill"></i>',
-            warning: '<i class="bi bi-exclamation-circle-fill"></i>',
-            info: '<i class="bi bi-info-circle-fill"></i>'
-        };
-
         const toast = document.createElement('div');
         toast.className = `gov-toast t-${type}`;
-
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        toast.innerHTML = `
-            <div class="gov-toast-icon-box">
-                ${icons[type] || icons.info}
-            </div>
-            <div class="gov-toast-content">
-                <div class="gov-toast-header-row">
-                    <span class="gov-toast-title">${title}</span>
-                    <span class="gov-toast-time">${timeStr}</span>
-                </div>
-                <div class="gov-toast-message">${message}</div>
-                ${actionText ? `
-                    <div class="gov-toast-actions">
-                        <button class="btn-toast-action" id="btn-toast-act-${Date.now()}">${actionText}</button>
-                    </div>
-                ` : ''}
-            </div>
-            <button class="btn-toast-close" aria-label="Dismiss">&times;</button>
-            ${duration > 0 ? `<div class="gov-toast-progress"></div>` : ''}
-        `;
-
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+        toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
         container.appendChild(toast);
 
         // Sound chime synthesis
@@ -679,11 +621,6 @@ window.GovUtils = {
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     const page = window.location.pathname.split('/').pop() || 'index.html';
-
-    // Initialize Notification Center & Header Bell
-    if (window.GovUtils && window.GovUtils.NotificationCenter) {
-        window.GovUtils.NotificationCenter.init();
-    }
 
     // Inject Exact Full-Screen Mega Menu Overlay (india.gov.in style with GovCatalyst content)
     if (!document.getElementById('gov-mega-menu-overlay')) {
