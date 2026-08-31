@@ -134,12 +134,408 @@ window.GovUtils = {
         const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
         toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
         container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            toast.style.transition = '0.3s';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
+
+        // Sound chime synthesis
+        if (sound) {
+            this.playToastSound(type);
+        }
+
+        // Bind Action Callback
+        if (actionText && typeof onAction === 'function') {
+            const actBtn = toast.querySelector('.btn-toast-action');
+            if (actBtn) {
+                actBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    onAction();
+                    dismissToast();
+                });
+            }
+        }
+
+        // Bind Close Button
+        const closeBtn = toast.querySelector('.btn-toast-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => dismissToast());
+        }
+
+        // Timer & Progress Animation with Pause on Hover
+        let startTime = Date.now();
+        let remainingTime = duration;
+        let timer = null;
+        const progressBar = toast.querySelector('.gov-toast-progress');
+
+        function startTimer() {
+            if (duration <= 0) return;
+            startTime = Date.now();
+            if (progressBar) {
+                progressBar.style.transition = `transform ${remainingTime}ms linear`;
+                progressBar.style.transform = 'scaleX(0)';
+            }
+            timer = setTimeout(() => {
+                dismissToast();
+            }, remainingTime);
+        }
+
+        function pauseTimer() {
+            if (duration <= 0 || !timer) return;
+            clearTimeout(timer);
+            timer = null;
+            const elapsed = Date.now() - startTime;
+            remainingTime = Math.max(0, remainingTime - elapsed);
+            if (progressBar) {
+                const currentWidth = (remainingTime / duration);
+                progressBar.style.transition = 'none';
+                progressBar.style.transform = `scaleX(${currentWidth})`;
+            }
+        }
+
+        function dismissToast() {
+            if (timer) clearTimeout(timer);
+            toast.classList.add('toast-hiding');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }
+
+        if (duration > 0) {
+            startTimer();
+            toast.addEventListener('mouseenter', pauseTimer);
+            toast.addEventListener('mouseleave', () => startTimer());
+        }
+
+        // Optional push to Notification Center
+        if (pushToCenter && window.GovUtils.NotificationCenter) {
+            window.GovUtils.NotificationCenter.addNotification({
+                title,
+                message,
+                type,
+                isCritical: type === 'critical' || type === 'error',
+                skipToast: true
+            });
+        }
+    },
+
+    // Synthesize web audio tone for alerts
+    playToastSound(type = 'info') {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            if (type === 'critical' || type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.setValueAtTime(440, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.25);
+            }
+        } catch (e) {
+            // Audio context blocked or unsupported
+        }
+    },
+
+    // Notification Center — Collapsible Edge-Anchored Panel Manager
+    NotificationCenter: {
+        storageKey: 'gov_notifications_v1',
+        activeTab: 'all',
+        isExpanded: false,
+
+        getNotifications() {
+            try {
+                const stored = localStorage.getItem(this.storageKey);
+                if (stored) return JSON.parse(stored);
+            } catch (e) {}
+
+            const defaults = [
+                {
+                    id: 'notif-1',
+                    title: 'GFR Rule 194 Threshold Engine Active',
+                    message: 'Real-time telemetry SLA monitoring initialized for sandbox pilots.',
+                    type: 'info',
+                    time: new Date(Date.now() - 3600000).toISOString(),
+                    read: false,
+                    isCritical: false
+                },
+                {
+                    id: 'notif-2',
+                    title: 'DPIIT Relaxation Matrix Updated',
+                    message: 'Startup exemption rules for 3-year turnover waived under Maharashtra Procurement Policy.',
+                    type: 'success',
+                    time: new Date(Date.now() - 7200000).toISOString(),
+                    read: false,
+                    isCritical: false
+                }
+            ];
+            localStorage.setItem(this.storageKey, JSON.stringify(defaults));
+            return defaults;
+        },
+
+        saveNotifications(items) {
+            try {
+                localStorage.setItem(this.storageKey, JSON.stringify(items));
+            } catch (e) {}
+            this.updateTuckedTab();
+            this.renderBody();
+        },
+
+        addNotification(item) {
+            const items = this.getNotifications();
+            const newNotif = {
+                id: 'notif-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+                title: item.title || 'Notification',
+                message: item.message || '',
+                type: item.type || 'info',
+                time: item.time || new Date().toISOString(),
+                read: false,
+                isCritical: !!item.isCritical,
+                actionUrl: item.actionUrl || null
+            };
+            items.unshift(newNotif);
+            if (items.length > 30) items.pop();
+            this.saveNotifications(items);
+
+            if (!item.skipToast && window.GovUtils.showToast) {
+                window.GovUtils.showToast({
+                    title: newNotif.title,
+                    message: newNotif.message,
+                    type: newNotif.type,
+                    pushToCenter: false
+                });
+            }
+        },
+
+        markAllAsRead() {
+            const items = this.getNotifications().map(n => ({ ...n, read: true }));
+            this.saveNotifications(items);
+        },
+
+        markAsRead(id) {
+            const items = this.getNotifications().map(n => n.id === id ? { ...n, read: true } : n);
+            this.saveNotifications(items);
+        },
+
+        clearAll() {
+            this.saveNotifications([]);
+        },
+
+        updateTuckedTab() {
+            const items = this.getNotifications();
+            const unreadCount = items.filter(n => !n.read).length;
+            const criticalCount = items.filter(n => !n.read && (n.isCritical || n.type === 'critical')).length;
+
+            const badgeEl = document.getElementById('edge-notif-pill-count');
+            const tabTab = document.getElementById('edge-notif-tucked-tab');
+
+            if (tabTab) {
+                if (criticalCount > 0) {
+                    tabTab.className = 'edge-notif-tucked-tab is-critical-tab';
+                } else if (unreadCount > 0) {
+                    tabTab.className = 'edge-notif-tucked-tab has-unread-tab';
+                } else {
+                    tabTab.className = 'edge-notif-tucked-tab';
+                }
+            }
+
+            if (badgeEl) {
+                if (unreadCount > 0) {
+                    badgeEl.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badgeEl.style.display = 'inline-block';
+                } else {
+                    badgeEl.style.display = 'none';
+                }
+            }
+        },
+
+        init() {
+            this.injectPanelDom();
+            this.updateTuckedTab();
+        },
+
+        injectPanelDom() {
+            if (document.getElementById('edge-notif-main-panel')) return;
+
+            const panelHtml = `
+                <div class="edge-notif-panel" id="edge-notif-main-panel">
+                    <!-- Collapsed Tucked Tab Card (Top Right Edge: < only) -->
+                    <div class="edge-notif-tucked-tab" id="edge-notif-tucked-tab" title="Click to reveal notifications & SLA alerts">
+                        <span class="edge-notif-badge-pill" id="edge-notif-pill-count" style="display: none;">0</span>
+                        <i class="bi bi-chevron-left edge-notif-tuck-arrow"></i>
+                    </div>
+
+                    <!-- Expanded Notification Card Box -->
+                    <div class="edge-notif-card-box" id="edge-notif-card-box">
+                        <div class="edge-notif-header">
+                            <h6><i class="bi bi-bell-fill text-warning me-1"></i>Notifications &amp; SLA Alerts</h6>
+                            <button class="edge-notif-tuck-btn" id="btn-edge-notif-tuck" title="Collapse panel">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="edge-notif-tabs">
+                            <button class="edge-notif-tab-btn active" data-tab="all">All</button>
+                            <button class="edge-notif-tab-btn" data-tab="critical">Critical SLA</button>
+                            <button class="edge-notif-tab-btn" data-tab="updates">System</button>
+                        </div>
+                        <div class="edge-notif-actions">
+                            <button class="btn btn-xs btn-outline-primary py-1 px-2" id="btn-edge-mark-read" style="font-size: 11px;">
+                                <i class="bi bi-check2-all me-1"></i>Mark all read
+                            </button>
+                            <button class="btn btn-xs btn-outline-danger py-1 px-2" id="btn-edge-simulate" style="font-size: 11px;" title="Test Real-Time Toast Alert">
+                                <i class="bi bi-lightning-fill me-1"></i>Simulate Alert
+                            </button>
+                        </div>
+                        <div class="edge-notif-body" id="edge-notif-body-list">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', panelHtml);
+
+            document.getElementById('edge-notif-tucked-tab').addEventListener('click', () => this.expand());
+            document.getElementById('btn-edge-notif-tuck').addEventListener('click', () => this.collapse());
+
+            document.getElementById('btn-edge-mark-read').addEventListener('click', () => this.markAllAsRead());
+            document.getElementById('btn-edge-simulate').addEventListener('click', () => this.simulateTestAlert());
+
+            document.querySelectorAll('.edge-notif-tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.edge-notif-tab-btn').forEach(b => b.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    this.activeTab = e.currentTarget.dataset.tab;
+                    this.renderBody();
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('edge-notif-main-panel');
+                if (this.isExpanded && panel && !panel.contains(e.target)) {
+                    this.collapse();
+                }
+            });
+        },
+
+        expand() {
+            const panel = document.getElementById('edge-notif-main-panel');
+            if (!panel) return;
+            this.isExpanded = true;
+            this.renderBody();
+            panel.classList.add('expanded');
+        },
+
+        collapse() {
+            const panel = document.getElementById('edge-notif-main-panel');
+            if (!panel) return;
+            this.isExpanded = false;
+            panel.classList.remove('expanded');
+        },
+
+        renderBody() {
+            const bodyEl = document.getElementById('edge-notif-body-list');
+            if (!bodyEl) return;
+
+            let items = this.getNotifications();
+
+            if (this.activeTab === 'critical') {
+                items = items.filter(i => i.isCritical || i.type === 'critical' || i.type === 'error');
+            } else if (this.activeTab === 'updates') {
+                items = items.filter(i => !i.isCritical && i.type !== 'critical' && i.type !== 'error');
+            }
+
+            if (items.length === 0) {
+                bodyEl.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-bell-slash fs-3 d-block mb-1 text-secondary"></i>
+                        <p class="small mb-0">No notifications found in this view.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const icons = {
+                success: 'bi-check-circle-fill text-success bg-success-subtle',
+                error: 'bi-exclamation-triangle-fill text-danger bg-danger-subtle',
+                critical: 'bi-lightning-charge-fill text-danger bg-danger-subtle',
+                warning: 'bi-exclamation-circle-fill text-warning bg-warning-subtle',
+                info: 'bi-info-circle-fill text-primary bg-primary-subtle'
+            };
+
+            bodyEl.innerHTML = items.map(n => {
+                const timeAgo = this.formatTimeAgo(n.time);
+                const iconClass = icons[n.type] || icons.info;
+
+                return `
+                    <div class="gov-notif-item ${!n.read ? 'unread' : ''} ${n.isCritical ? 'is-critical' : ''}" data-id="${n.id}">
+                        <div class="gov-notif-item-icon">
+                            <i class="bi ${iconClass.split(' ')[0]} ${iconClass.split(' ')[1]}"></i>
+                        </div>
+                        <div class="gov-notif-item-content">
+                            <div class="gov-notif-item-title">${n.title}</div>
+                            <div class="gov-notif-item-msg">${n.message}</div>
+                            <div class="gov-notif-item-meta">
+                                <span><i class="bi bi-clock me-1"></i>${timeAgo}</span>
+                                ${!n.read ? `<a href="#" class="text-primary text-decoration-none btn-mark-item-read" data-id="${n.id}">Mark read</a>` : '<span class="text-muted"><i class="bi bi-check-all"></i> Read</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            bodyEl.querySelectorAll('.btn-mark-item-read').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = e.currentTarget.dataset.id;
+                    this.markAsRead(id);
+                });
+            });
+
+            bodyEl.querySelectorAll('.gov-notif-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('btn-mark-item-read')) return;
+                    const id = item.dataset.id;
+                    this.markAsRead(id);
+                });
+            });
+        },
+
+        formatTimeAgo(timeStr) {
+            if (!timeStr) return 'Just now';
+            const diff = Math.floor((new Date() - new Date(timeStr)) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 86400)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
+        },
+
+        simulateTestAlert() {
+            window.GovUtils.showToast({
+                title: 'CRITICAL SLA BREACH DETECTED',
+                message: 'Sandbox Pilot [PLT-8821]: Fuel Efficiency parameter dropped 24.5% below SLA baseline.',
+                type: 'critical',
+                actionText: 'View Pilot M&E',
+                onAction: () => {
+                    window.location.href = 'performance.html';
+                },
+                duration: 8000,
+                sound: true,
+                pushToCenter: true
+            });
+        }
     },
 
     // Open modal (auto-injecting overlay if missing)
@@ -1024,14 +1420,23 @@ window.GovAuth = {
                         <i class="bi bi-shield-check fs-4 me-3 text-success"></i>
                         <div>
                             <strong>Authentication Successful</strong>
-                            <div class="small">Authenticated as ${data.user.name}. Loading session...</div>
+                            <div class="small">Authenticated via PostgreSQL JWT backend. Redirecting...</div>
                         </div>
                     </div>`;
                 }
                 setTimeout(() => {
                     GovAuth.closeAuthModal();
-                    window.location.reload();
-                }, 800);
+                    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
+                        const userRole = (data.user && data.user.role) ? data.user.role.toLowerCase() : '';
+                        if (userRole.includes('admin') || userRole.includes('validator')) {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                }, 1000);
                 return;
             }
         } catch (apiErr) {
@@ -1058,11 +1463,20 @@ window.GovAuth = {
                 if (res.user) {
                     GovApi.setToken('mock-jwt-token-' + (res.user.id || 'usr'), res.user);
                 }
-                GovUtils.showToast('Login successful!', 'success');
+                GovUtils.showToast('Login successful! Redirecting to dashboard...', 'success');
                 setTimeout(() => {
                     GovAuth.closeAuthModal();
-                    window.location.reload();
-                }, 800);
+                    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
+                        const userRole = (res.user && res.user.role) ? res.user.role.toLowerCase() : '';
+                        if (userRole.includes('admin') || userRole.includes('validator')) {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                }, 1200);
             } else if (res.status === 'approved_awaiting_otp') {
                 setTimeout(() => {
                     GovAuth.switchTab('otp-activate');
