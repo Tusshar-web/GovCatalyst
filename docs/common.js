@@ -419,8 +419,7 @@ window.GovUtils = {
         },
 
         init() {
-            this.injectPanelDom();
-            this.updateTuckedTab();
+            // Disabled: Notification Center UI is removed as per requirements.
         },
 
         injectPanelDom() {
