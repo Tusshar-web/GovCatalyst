@@ -294,8 +294,8 @@ window.GovUtils = {
                 osc.stop(ctx.currentTime + 0.35);
             } else {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.08, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
                 osc.start();
@@ -306,10 +306,11 @@ window.GovUtils = {
         }
     },
 
-    // Notification Center & Alert Drawer Manager
+    // Notification Center — Collapsible Edge-Anchored Panel Manager
     NotificationCenter: {
         storageKey: 'gov_notifications_v1',
         activeTab: 'all',
+        isExpanded: false,
 
         getNotifications() {
             try {
@@ -317,7 +318,6 @@ window.GovUtils = {
                 if (stored) return JSON.parse(stored);
             } catch (e) {}
 
-            // Initial Default Notifications
             const defaults = [
                 {
                     id: 'notif-1',
@@ -346,7 +346,7 @@ window.GovUtils = {
             try {
                 localStorage.setItem(this.storageKey, JSON.stringify(items));
             } catch (e) {}
-            this.updateBadge();
+            this.updateTuckedTab();
             this.renderBody();
         },
 
@@ -390,123 +390,120 @@ window.GovUtils = {
             this.saveNotifications([]);
         },
 
-        updateBadge() {
-            const badgeEl = document.getElementById('gov-notif-badge-count');
-            if (!badgeEl) return;
+        updateTuckedTab() {
             const items = this.getNotifications();
             const unreadCount = items.filter(n => !n.read).length;
-            if (unreadCount > 0) {
-                badgeEl.textContent = unreadCount > 99 ? '99+' : unreadCount;
-                badgeEl.style.display = 'flex';
-            } else {
-                badgeEl.style.display = 'none';
+            const criticalCount = items.filter(n => !n.read && (n.isCritical || n.type === 'critical')).length;
+
+            const badgeEl = document.getElementById('edge-notif-pill-count');
+            const tabTab = document.getElementById('edge-notif-tucked-tab');
+
+            if (tabTab) {
+                if (criticalCount > 0) {
+                    tabTab.className = 'edge-notif-tucked-tab is-critical-tab';
+                } else if (unreadCount > 0) {
+                    tabTab.className = 'edge-notif-tucked-tab has-unread-tab';
+                } else {
+                    tabTab.className = 'edge-notif-tucked-tab';
+                }
+            }
+
+            if (badgeEl) {
+                if (unreadCount > 0) {
+                    badgeEl.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badgeEl.style.display = 'inline-block';
+                } else {
+                    badgeEl.style.display = 'none';
+                }
             }
         },
 
         init() {
-            this.injectHeaderBell();
-            this.injectDrawerDom();
-            this.updateBadge();
+            this.injectPanelDom();
+            this.updateTuckedTab();
         },
 
-        injectHeaderBell() {
-            if (document.getElementById('gov-notif-bell-container')) return;
+        injectPanelDom() {
+            if (document.getElementById('edge-notif-main-panel')) return;
 
-            const topBar = document.querySelector('.top-bar-clean .container');
-            if (!topBar) return;
-
-            const bellHtml = `
-                <div class="top-bar-clean-right" id="gov-notif-bell-container">
-                    <button class="gov-notif-bell-btn" id="btn-gov-notif-bell" title="View Notifications & SLA Alerts" aria-label="Notifications">
-                        <i class="bi bi-bell-fill"></i>
-                        <span class="gov-notif-badge" id="gov-notif-badge-count" style="display: none;">0</span>
-                    </button>
-                </div>
-            `;
-
-            const hamburger = document.getElementById('gov-hamburger-toggle');
-            if (hamburger && hamburger.parentNode === topBar) {
-                hamburger.insertAdjacentHTML('beforebegin', bellHtml);
-            } else {
-                topBar.insertAdjacentHTML('beforeend', bellHtml);
-            }
-
-            const bellBtn = document.getElementById('btn-gov-notif-bell');
-            if (bellBtn) {
-                bellBtn.addEventListener('click', () => this.toggleDrawer());
-            }
-        },
-
-        injectDrawerDom() {
-            if (document.getElementById('gov-notif-drawer-panel')) return;
-
-            const drawerHtml = `
-                <div class="gov-notif-overlay" id="gov-notif-overlay"></div>
-                <div class="gov-notif-drawer" id="gov-notif-drawer-panel">
-                    <div class="gov-notif-header">
-                        <h5><i class="bi bi-bell me-2"></i>Notifications &amp; Alerts</h5>
-                        <button class="gov-notif-close-btn" id="gov-notif-close-btn">&times;</button>
+            const panelHtml = `
+                <div class="edge-notif-panel" id="edge-notif-main-panel">
+                    <!-- Collapsed Tucked Tab Card (Top Right Edge: < only) -->
+                    <div class="edge-notif-tucked-tab" id="edge-notif-tucked-tab" title="Click to reveal notifications & SLA alerts">
+                        <span class="edge-notif-badge-pill" id="edge-notif-pill-count" style="display: none;">0</span>
+                        <i class="bi bi-chevron-left edge-notif-tuck-arrow"></i>
                     </div>
-                    <div class="gov-notif-tabs">
-                        <button class="gov-notif-tab-btn active" data-tab="all">All</button>
-                        <button class="gov-notif-tab-btn" data-tab="critical">Critical SLA</button>
-                        <button class="gov-notif-tab-btn" data-tab="updates">System</button>
-                    </div>
-                    <div class="gov-notif-actions-bar">
-                        <button class="btn btn-xs btn-outline-primary py-1 px-2" id="btn-notif-mark-read" style="font-size: 11px;">
-                            <i class="bi bi-check2-all me-1"></i>Mark all read
-                        </button>
-                        <button class="btn btn-xs btn-outline-danger py-1 px-2" id="btn-notif-simulate" style="font-size: 11px;" title="Test Real-Time Alert Toast">
-                            <i class="bi bi-lightning-fill me-1"></i>Simulate Alert
-                        </button>
-                    </div>
-                    <div class="gov-notif-body" id="gov-notif-body-list">
-                        <!-- Rendered dynamically -->
+
+                    <!-- Expanded Notification Card Box -->
+                    <div class="edge-notif-card-box" id="edge-notif-card-box">
+                        <div class="edge-notif-header">
+                            <h6><i class="bi bi-bell-fill text-warning me-1"></i>Notifications &amp; SLA Alerts</h6>
+                            <button class="edge-notif-tuck-btn" id="btn-edge-notif-tuck" title="Collapse panel">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="edge-notif-tabs">
+                            <button class="edge-notif-tab-btn active" data-tab="all">All</button>
+                            <button class="edge-notif-tab-btn" data-tab="critical">Critical SLA</button>
+                            <button class="edge-notif-tab-btn" data-tab="updates">System</button>
+                        </div>
+                        <div class="edge-notif-actions">
+                            <button class="btn btn-xs btn-outline-primary py-1 px-2" id="btn-edge-mark-read" style="font-size: 11px;">
+                                <i class="bi bi-check2-all me-1"></i>Mark all read
+                            </button>
+                            <button class="btn btn-xs btn-outline-danger py-1 px-2" id="btn-edge-simulate" style="font-size: 11px;" title="Test Real-Time Toast Alert">
+                                <i class="bi bi-lightning-fill me-1"></i>Simulate Alert
+                            </button>
+                        </div>
+                        <div class="edge-notif-body" id="edge-notif-body-list">
+                            <!-- Rendered dynamically -->
+                        </div>
                     </div>
                 </div>
             `;
 
-            document.body.insertAdjacentHTML('beforeend', drawerHtml);
+            document.body.insertAdjacentHTML('beforeend', panelHtml);
 
-            document.getElementById('gov-notif-overlay').addEventListener('click', () => this.closeDrawer());
-            document.getElementById('gov-notif-close-btn').addEventListener('click', () => this.closeDrawer());
-            document.getElementById('btn-notif-mark-read').addEventListener('click', () => this.markAllAsRead());
-            document.getElementById('btn-notif-simulate').addEventListener('click', () => this.simulateTestAlert());
+            document.getElementById('edge-notif-tucked-tab').addEventListener('click', () => this.expand());
+            document.getElementById('btn-edge-notif-tuck').addEventListener('click', () => this.collapse());
 
-            document.querySelectorAll('.gov-notif-tab-btn').forEach(btn => {
+            document.getElementById('btn-edge-mark-read').addEventListener('click', () => this.markAllAsRead());
+            document.getElementById('btn-edge-simulate').addEventListener('click', () => this.simulateTestAlert());
+
+            document.querySelectorAll('.edge-notif-tab-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.gov-notif-tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.edge-notif-tab-btn').forEach(b => b.classList.remove('active'));
                     e.currentTarget.classList.add('active');
                     this.activeTab = e.currentTarget.dataset.tab;
                     this.renderBody();
                 });
             });
+
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('edge-notif-main-panel');
+                if (this.isExpanded && panel && !panel.contains(e.target)) {
+                    this.collapse();
+                }
+            });
         },
 
-        toggleDrawer() {
-            const drawer = document.getElementById('gov-notif-drawer-panel');
-            const overlay = document.getElementById('gov-notif-overlay');
-            if (!drawer) return;
-
-            const isOpen = drawer.classList.contains('open');
-            if (isOpen) {
-                this.closeDrawer();
-            } else {
-                this.renderBody();
-                drawer.classList.add('open');
-                if (overlay) overlay.classList.add('show');
-            }
+        expand() {
+            const panel = document.getElementById('edge-notif-main-panel');
+            if (!panel) return;
+            this.isExpanded = true;
+            this.renderBody();
+            panel.classList.add('expanded');
         },
 
-        closeDrawer() {
-            const drawer = document.getElementById('gov-notif-drawer-panel');
-            const overlay = document.getElementById('gov-notif-overlay');
-            if (drawer) drawer.classList.remove('open');
-            if (overlay) overlay.classList.remove('show');
+        collapse() {
+            const panel = document.getElementById('edge-notif-main-panel');
+            if (!panel) return;
+            this.isExpanded = false;
+            panel.classList.remove('expanded');
         },
 
         renderBody() {
-            const bodyEl = document.getElementById('gov-notif-body-list');
+            const bodyEl = document.getElementById('edge-notif-body-list');
             if (!bodyEl) return;
 
             let items = this.getNotifications();
@@ -519,8 +516,8 @@ window.GovUtils = {
 
             if (items.length === 0) {
                 bodyEl.innerHTML = `
-                    <div class="text-center text-muted py-5">
-                        <i class="bi bi-bell-slash fs-2 d-block mb-2 text-secondary"></i>
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-bell-slash fs-3 d-block mb-1 text-secondary"></i>
                         <p class="small mb-0">No notifications found in this view.</p>
                     </div>
                 `;
@@ -579,7 +576,7 @@ window.GovUtils = {
             const diff = Math.floor((new Date() - new Date(timeStr)) / 1000);
             if (diff < 60) return 'Just now';
             if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            if (diff < 86400) return `${Math.floor(diff / 86400)}h ago`;
             return `${Math.floor(diff / 86400)}d ago`;
         },
 
