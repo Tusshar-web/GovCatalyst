@@ -121,189 +121,25 @@ window.GovUtils = {
         return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     },
 
-    // Enhanced Toast notification system with titles, action buttons, progress bars & sound
-    showToast(options, legacyType = 'info') {
-        let title, message, type, duration, actionText, onAction, sound, pushToCenter;
-
-        if (typeof options === 'string') {
-            message = options;
-            type = legacyType;
-            title = type === 'success' ? 'Success' : (type === 'error' ? 'Error' : (type === 'warning' ? 'Warning' : 'Notification'));
-            duration = 4000;
-        } else if (typeof options === 'object' && options !== null) {
-            message = options.message || '';
-            type = options.type || 'info';
-            title = options.title || (type === 'success' ? 'Success' : (type === 'error' ? 'Error' : (type === 'critical' ? 'Critical Alert' : (type === 'warning' ? 'Warning' : 'Notification'))));
-            duration = options.duration !== undefined ? options.duration : (type === 'critical' ? 7000 : 4500);
-            actionText = options.actionText || null;
-            onAction = options.onAction || null;
-            sound = options.sound || (type === 'critical');
-            pushToCenter = options.pushToCenter !== false;
-        } else {
-            return;
-        }
-
+    // Show toast notification
+    showToast(message, type = 'info') {
         let container = document.querySelector('.toast-container-gov');
         if (!container) {
             container = document.createElement('div');
             container.className = 'toast-container-gov';
-            container.setAttribute('aria-live', 'polite');
-            container.setAttribute('role', 'region');
             document.body.appendChild(container);
         }
-
-        // Limit active toasts to max 5 to prevent overflow
-        const existingToasts = container.querySelectorAll('.gov-toast');
-        if (existingToasts.length >= 5) {
-            existingToasts[0].remove();
-        }
-
-        const icons = {
-            success: '<i class="bi bi-check-circle-fill"></i>',
-            error: '<i class="bi bi-x-circle-fill"></i>',
-            critical: '<i class="bi bi-exclamation-triangle-fill"></i>',
-            warning: '<i class="bi bi-exclamation-circle-fill"></i>',
-            info: '<i class="bi bi-info-circle-fill"></i>'
-        };
-
         const toast = document.createElement('div');
         toast.className = `gov-toast t-${type}`;
-
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        toast.innerHTML = `
-            <div class="gov-toast-icon-box">
-                ${icons[type] || icons.info}
-            </div>
-            <div class="gov-toast-content">
-                <div class="gov-toast-header-row">
-                    <span class="gov-toast-title">${title}</span>
-                    <span class="gov-toast-time">${timeStr}</span>
-                </div>
-                <div class="gov-toast-message">${message}</div>
-                ${actionText ? `
-                    <div class="gov-toast-actions">
-                        <button class="btn-toast-action" id="btn-toast-act-${Date.now()}">${actionText}</button>
-                    </div>
-                ` : ''}
-            </div>
-            <button class="btn-toast-close" aria-label="Dismiss">&times;</button>
-            ${duration > 0 ? `<div class="gov-toast-progress"></div>` : ''}
-        `;
-
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+        toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> <span>${message}</span>`;
         container.appendChild(toast);
-
-        // Sound chime synthesis
-        if (sound) {
-            this.playToastSound(type);
-        }
-
-        // Bind Action Callback
-        if (actionText && typeof onAction === 'function') {
-            const actBtn = toast.querySelector('.btn-toast-action');
-            if (actBtn) {
-                actBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    onAction();
-                    dismissToast();
-                });
-            }
-        }
-
-        // Bind Close Button
-        const closeBtn = toast.querySelector('.btn-toast-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => dismissToast());
-        }
-
-        // Timer & Progress Animation with Pause on Hover
-        let startTime = Date.now();
-        let remainingTime = duration;
-        let timer = null;
-        const progressBar = toast.querySelector('.gov-toast-progress');
-
-        function startTimer() {
-            if (duration <= 0) return;
-            startTime = Date.now();
-            if (progressBar) {
-                progressBar.style.transition = `transform ${remainingTime}ms linear`;
-                progressBar.style.transform = 'scaleX(0)';
-            }
-            timer = setTimeout(() => {
-                dismissToast();
-            }, remainingTime);
-        }
-
-        function pauseTimer() {
-            if (duration <= 0 || !timer) return;
-            clearTimeout(timer);
-            timer = null;
-            const elapsed = Date.now() - startTime;
-            remainingTime = Math.max(0, remainingTime - elapsed);
-            if (progressBar) {
-                const currentWidth = (remainingTime / duration);
-                progressBar.style.transition = 'none';
-                progressBar.style.transform = `scaleX(${currentWidth})`;
-            }
-        }
-
-        function dismissToast() {
-            if (timer) clearTimeout(timer);
-            toast.classList.add('toast-hiding');
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }
-
-        if (duration > 0) {
-            startTimer();
-            toast.addEventListener('mouseenter', pauseTimer);
-            toast.addEventListener('mouseleave', () => startTimer());
-        }
-
-        // Optional push to Notification Center
-        if (pushToCenter && window.GovUtils.NotificationCenter) {
-            window.GovUtils.NotificationCenter.addNotification({
-                title,
-                message,
-                type,
-                isCritical: type === 'critical' || type === 'error',
-                skipToast: true
-            });
-        }
-    },
-
-    // Synthesize web audio tone for alerts
-    playToastSound(type = 'info') {
-        try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) return;
-            const ctx = new AudioCtx();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-
-            if (type === 'critical' || type === 'error') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(880, ctx.currentTime);
-                osc.frequency.setValueAtTime(440, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.15, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.35);
-            } else {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-                gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.25);
-            }
-        } catch (e) {
-            // Audio context blocked or unsupported
-        }
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            toast.style.transition = '0.3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
     },
 
     // Open modal (auto-injecting overlay if missing)
@@ -389,11 +225,6 @@ window.GovUtils = {
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     const page = window.location.pathname.split('/').pop() || 'index.html';
-
-    // Initialize Notification Center & Header Bell
-    if (window.GovUtils && window.GovUtils.NotificationCenter) {
-        window.GovUtils.NotificationCenter.init();
-    }
 
     // Inject Exact Full-Screen Mega Menu Overlay (india.gov.in style with GovCatalyst content)
     if (!document.getElementById('gov-mega-menu-overlay')) {
