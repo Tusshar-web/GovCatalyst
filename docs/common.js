@@ -1024,23 +1024,14 @@ window.GovAuth = {
                         <i class="bi bi-shield-check fs-4 me-3 text-success"></i>
                         <div>
                             <strong>Authentication Successful</strong>
-                            <div class="small">Authenticated via PostgreSQL JWT backend. Redirecting...</div>
+                            <div class="small">Authenticated as ${data.user.name}. Loading session...</div>
                         </div>
                     </div>`;
                 }
                 setTimeout(() => {
                     GovAuth.closeAuthModal();
-                    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-                        const userRole = (data.user && data.user.role) ? data.user.role.toLowerCase() : '';
-                        if (userRole.includes('admin') || userRole.includes('validator')) {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.reload();
-                        }
-                    } else {
-                        window.location.reload();
-                    }
-                }, 1000);
+                    window.location.reload();
+                }, 800);
                 return;
             }
         } catch (apiErr) {
@@ -1067,20 +1058,11 @@ window.GovAuth = {
                 if (res.user) {
                     GovApi.setToken('mock-jwt-token-' + (res.user.id || 'usr'), res.user);
                 }
-                GovUtils.showToast('Login successful! Redirecting to dashboard...', 'success');
+                GovUtils.showToast('Login successful!', 'success');
                 setTimeout(() => {
                     GovAuth.closeAuthModal();
-                    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-                        const userRole = (res.user && res.user.role) ? res.user.role.toLowerCase() : '';
-                        if (userRole.includes('admin') || userRole.includes('validator')) {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.reload();
-                        }
-                    } else {
-                        window.location.reload();
-                    }
-                }, 1200);
+                    window.location.reload();
+                }, 800);
             } else if (res.status === 'approved_awaiting_otp') {
                 setTimeout(() => {
                     GovAuth.switchTab('otp-activate');
