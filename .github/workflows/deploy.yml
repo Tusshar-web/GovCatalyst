@@ -1,9 +1,10 @@
-name: Deploy Client to GitHub Pages
+name: Deploy Docs to GitHub Pages
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,11 +30,11 @@ jobs:
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload client folder
+      - name: Upload docs folder
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./client
+          path: ./docs
 
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4

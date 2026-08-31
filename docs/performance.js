@@ -455,34 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const active = alerts.filter(a => a.status === 'ACTIVE');
         if (badgeAlertsCount) badgeAlertsCount.textContent = `${active.length} Active Alert${active.length === 1 ? '' : 's'}`;
 
-        if (active.length > 0) {
-            // Trigger interactive toast alert for the most recent active critical alert
-            const firstActive = active[0];
-            if (firstActive && !firstActive._toastTriggered) {
-                firstActive._toastTriggered = true;
-                if (window.GovUtils && window.GovUtils.showToast) {
-                    window.GovUtils.showToast({
-                        title: firstActive.title || 'SLA THRESHOLD BREACH',
-                        message: firstActive.message,
-                        type: firstActive.severity === 'CRITICAL' ? 'critical' : 'warning',
-                        actionText: 'Acknowledge Alert',
-                        onAction: async () => {
-                            try {
-                                await GovApi.acknowledgePilotAlert(pilotDbId, firstActive.id);
-                                GovUtils.showToast('Alert acknowledged successfully', 'success');
-                                renderDashboard(pilotDbId);
-                            } catch (err) {
-                                GovUtils.showToast('Failed to acknowledge alert: ' + err.message, 'error');
-                            }
-                        },
-                        duration: 7500,
-                        sound: true,
-                        pushToCenter: true
-                    });
-                }
-            }
-        }
-
         if (!alertsContainer) return;
 
         if (!active.length) {
