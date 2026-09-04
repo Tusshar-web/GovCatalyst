@@ -47,6 +47,8 @@ const validationRoutes = require('./routes/validationRoutes');
 app.use(['/api/validations', '/api/v1/validations'], validationRoutes);
 const uploadRoutes = require('./routes/uploadRoutes');
 app.use(['/api/upload', '/api/v1/upload'], uploadRoutes);
+const auditRoutes = require('./routes/auditRoutes');
+app.use(['/api/audit', '/api/v1/audit'], auditRoutes);
 
 const runAutoMigration = require('./config/autoMigrate');
 

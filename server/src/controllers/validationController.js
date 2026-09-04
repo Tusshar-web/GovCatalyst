@@ -469,6 +469,52 @@ async function getObjectionsByReport(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// ADMIN SIGNOFF CONTROLLERS
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * GET /api/validations/admin/signoffs
+ * super_admin: Fetch all validator assignments globally for the admin view
+ */
+async function getAllSignoffs(req, res) {
+  try {
+    const assignments = await ValidatorAssignment.findAllAssignments();
+    return formatSuccess(res, assignments, 'All sign-offs retrieved');
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
+/**
+ * POST /api/validations/admin/signoffs/:id/execute
+ * super_admin: Force execute/sign-off a validation
+ */
+async function executeAdminSignoff(req, res) {
+  try {
+    const { id } = req.params;
+    
+    // Complete the assignment
+    const updated = await ValidatorAssignment.complete(id);
+    if (!updated) return formatError(res, 'Assignment not found', 404);
+
+    // Also write an audit log
+    const { logAction } = require('./auditController');
+    const actorId = req.user ? (req.user.user_id || req.user.id) : updated.validator_id;
+    await logAction(
+      actorId,
+      'Sign-off Approved',
+      'Admin',
+      id,
+      `Independent validator verification certified for ${id} on pilot ${updated.pilot_id}`
+    );
+
+    return formatSuccess(res, updated, 'Audit Sign-Off successfully recorded!');
+  } catch (err) {
+    return formatError(res, err.message);
+  }
+}
+
 module.exports = {
   // Assignments
   assignValidator,
@@ -491,5 +537,8 @@ module.exports = {
   // Objections
   raiseObjection,
   respondToObjection,
-  getObjectionsByReport
+  getObjectionsByReport,
+  // Admin
+  getAllSignoffs,
+  executeAdminSignoff
 };

@@ -50,13 +50,20 @@ async updateStatus(userId, status, approvedBy = null) {
 
   async findAllByRole(role) {
     const { rows } = await pool.query(
-      `SELECT id, name, email, role, department_name, designation, created_at 
+      `SELECT id, name, email, role, department_name, designation, created_at, account_status 
        FROM users WHERE role = $1 AND account_status = 'active'`,
       [role]
     );
     return rows;
   },
-};
 
+  async findAllUsers() {
+    const { rows } = await pool.query(
+      `SELECT id, name, email, role, department_name, designation, created_at, account_status 
+       FROM users ORDER BY created_at DESC`
+    );
+    return rows;
+  }
+};
 
 module.exports = User;

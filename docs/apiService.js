@@ -180,6 +180,17 @@ window.GovApi = {
         return this.request('/api/users?role=evaluator');
     },
 
+    async getUsers() {
+        return this.request('/api/users');
+    },
+
+    async createUser(userData) {
+        return this.request('/api/users', {
+            method: 'POST',
+            body: JSON.stringify(userData)
+        });
+    },
+
     // --- APPLICATIONS ENDPOINTS ---
     async getApplications() {
         return this.request('/api/applications');
@@ -519,6 +530,21 @@ window.GovApi = {
         return this.request('/api/upload/csv-telemetry', {
             method: 'POST',
             body: formData
+        });
+    },
+
+    // --- ADMIN & GOVERNANCE ENDPOINTS ---
+    async getAuditLogs() {
+        return this.request('/api/audit');
+    },
+
+    async getSignoffs() {
+        return this.request('/api/validations/admin/signoffs');
+    },
+
+    async executeSignoff(id) {
+        return this.request(`/api/validations/admin/signoffs/${id}/execute`, {
+            method: 'POST'
         });
     }
 };

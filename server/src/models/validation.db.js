@@ -77,6 +77,20 @@ const ValidatorAssignment = {
     return rows[0] || null;
   },
 
+  async findAllAssignments() {
+    const { rows } = await pool.query(
+      `SELECT va.*, 
+              u.name AS validator_name, 
+              u.email AS validator_email,
+              gp.pilot_code AS pilot_code
+       FROM validator_assignments va
+       JOIN users u ON va.validator_id = u.id
+       JOIN gov_pilots gp ON va.pilot_id = gp.id
+       ORDER BY va.assigned_at DESC`
+    );
+    return rows;
+  },
+
   async activate(id) {
     const { rows } = await pool.query(
       `UPDATE validator_assignments SET status = 'active' WHERE id = $1 AND status = 'pending' RETURNING *`,

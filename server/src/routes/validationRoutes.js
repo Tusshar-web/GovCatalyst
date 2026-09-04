@@ -100,4 +100,15 @@ router.get('/objections/report/:reportId',
   ctrl.getObjectionsByReport
 );
 
+// ── Admin Sign-Offs ───────────────────────────────────────────────
+router.get('/admin/signoffs',
+  requireRole('super_admin'),
+  ctrl.getAllSignoffs
+);
+
+router.post('/admin/signoffs/:id/execute',
+  requireRole('super_admin'),
+  ctrl.executeAdminSignoff
+);
+
 module.exports = router;
